@@ -1,4 +1,4 @@
-import { type FC, useEffect, useRef } from 'react';
+import { type FC, useCallback, useEffect, useRef } from 'react';
 import { useMarkdown } from '../hooks/useMarkdown';
 
 type MarkdownViewProps = {
@@ -65,6 +65,59 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTo
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => { el.removeEventListener('scroll', handleScroll); };
   }, [onTopLineChange]);
+
+  // Vim-style keyboard navigation
+  const pendingGRef = useRef(false);
+
+  const handleVimKeys = useCallback((e: KeyboardEvent) => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    const STEP = 60;
+    const HALF_PAGE = el.clientHeight / 2;
+
+    switch (e.key) {
+      case 'j':
+        e.preventDefault();
+        el.scrollBy({ top: STEP, behavior: 'smooth' });
+        break;
+      case 'k':
+        e.preventDefault();
+        el.scrollBy({ top: -STEP, behavior: 'smooth' });
+        break;
+      case 'd':
+        e.preventDefault();
+        el.scrollBy({ top: HALF_PAGE, behavior: 'smooth' });
+        break;
+      case 'u':
+        e.preventDefault();
+        el.scrollBy({ top: -HALF_PAGE, behavior: 'smooth' });
+        break;
+      case 'G':
+        e.preventDefault();
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        break;
+      case 'g':
+        if (pendingGRef.current) {
+          e.preventDefault();
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+          pendingGRef.current = false;
+        } else {
+          pendingGRef.current = true;
+          setTimeout(() => { pendingGRef.current = false; }, 500);
+        }
+        break;
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleVimKeys);
+    return () => { window.removeEventListener('keydown', handleVimKeys); };
+  }, [handleVimKeys]);
 
   return (
     <div className="markdown-view" ref={containerRef}>
