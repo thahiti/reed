@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { IpcChannels } from '../shared/types';
 
 const api = {
@@ -7,6 +7,8 @@ const api = {
     ...args: IpcChannels[K]['args']
   ): Promise<IpcChannels[K]['return']> =>
     ipcRenderer.invoke(channel, ...args),
+
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 
   on: (channel: string, callback: (...args: readonly unknown[]) => void) => {
     const subscription = (_event: Electron.IpcRendererEvent, ...args: readonly unknown[]) =>
