@@ -9,8 +9,10 @@ import { oneDark } from '@codemirror/theme-one-dark';
 type MarkdownEditorProps = {
   readonly content: string;
   readonly isDark: boolean;
+  readonly initialScrollRatio?: number;
   readonly onChange: (content: string) => void;
   readonly onSave: () => void;
+  readonly onScrollRatioChange?: (ratio: number) => void;
 };
 
 const lightEditorTheme = EditorView.theme({
@@ -40,7 +42,7 @@ const lightEditorTheme = EditorView.theme({
   },
 });
 
-export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, onChange, onSave }) => {
+export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, initialScrollRatio, onChange, onSave, onScrollRatioChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -91,6 +93,30 @@ export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, onCha
     });
 
     viewRef.current = view;
+
+    // Restore scroll position
+    if (initialScrollRatio !== undefined) {
+      requestAnimationFrame(() => {
+        const scroller = containerRef.current?.querySelector('.cm-scroller');
+        if (scroller) {
+          const scrollable = scroller.scrollHeight - scroller.clientHeight;
+          scroller.scrollTop = scrollable * initialScrollRatio;
+        }
+      });
+    }
+
+    // Track scroll position
+    if (onScrollRatioChange) {
+      const scroller = containerRef.current.querySelector('.cm-scroller');
+      if (scroller) {
+        const handleScroll = () => {
+          const scrollable = scroller.scrollHeight - scroller.clientHeight;
+          const ratio = scrollable > 0 ? scroller.scrollTop / scrollable : 0;
+          onScrollRatioChange(ratio);
+        };
+        scroller.addEventListener('scroll', handleScroll, { passive: true });
+      }
+    }
 
     return () => {
       view.destroy();
