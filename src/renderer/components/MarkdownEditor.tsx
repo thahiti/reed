@@ -101,6 +101,11 @@ export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, initi
 
     viewRef.current = view;
 
+    // Force layout measurement after mount
+    requestAnimationFrame(() => {
+      view.requestMeasure();
+    });
+
     // Restore scroll to initial line
     if (initialLine !== undefined && initialLine > 1) {
       requestAnimationFrame(() => {
