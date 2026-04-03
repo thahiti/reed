@@ -1,4 +1,5 @@
-import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import { app, Menu, shell, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import { getSettingsPath } from './ipc/settingsHandlers';
 
 const helpContent = `
 # Reed — Keyboard Shortcuts
@@ -30,6 +31,16 @@ const helpContent = `
 | ⇧⌘[ | Previous tab |
 | ⇧⌘] | Next tab |
 
+## Navigation (Read Mode)
+| Shortcut | Action |
+|----------|--------|
+| j | Scroll down |
+| k | Scroll up |
+| d | Page down |
+| u | Page up |
+| G | Go to end |
+| gg | Go to top |
+
 ## View
 | Shortcut | Action |
 |----------|--------|
@@ -37,6 +48,30 @@ const helpContent = `
 | ⌘- | Zoom out |
 | ⌘0 | Reset zoom |
 | ⌃⌘F | Toggle fullscreen |
+
+## Settings
+- **⌘,** — Open settings file (JSON)
+- Scroll speed, fonts, colors can be customized
+- Settings are stored in the app's config directory
+
+### Example settings
+\`\`\`json
+{
+  "settings": {
+    "scroll": {
+      "stepLines": 8,
+      "pageLines": 30
+    },
+    "lightTheme": {
+      "fonts": { "body": "Georgia, serif", "bodySize": "18px" },
+      "colors": { "bg": "#fefefe", "text": "#333" }
+    },
+    "darkTheme": {
+      "colors": { "bg": "#1a1a1a" }
+    }
+  }
+}
+\`\`\`
 
 ## Other
 - Drag & drop .md files onto the window to open
@@ -53,6 +88,12 @@ export const createMenu = (mainWindow: BrowserWindow): Menu => {
       label: app.name,
       submenu: [
         { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Settings...',
+          accelerator: 'Cmd+,',
+          click: () => { void shell.openPath(getSettingsPath()); },
+        },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
