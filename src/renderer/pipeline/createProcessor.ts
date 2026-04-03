@@ -20,6 +20,7 @@ import { Link } from '../components/markdown/Link';
 import { Divider } from '../components/markdown/Divider';
 import { Checkbox } from '../components/markdown/Checkbox';
 import { MermaidDiagram } from '../components/markdown/MermaidDiagram';
+import { rehypeSourceLines } from './rehypeSourceLines';
 
 type AnyProps = Record<string, unknown>;
 
@@ -49,6 +50,7 @@ const buildProcessor = () => {
   processor.use(remarkMath);
   processor.use(remarkRehype);
   processor.use(rehypeKatex);
+  processor.use(rehypeSourceLines);
   processor.use(rehypeHighlight, { detect: true });
   processor.use(rehypeReact, {
     Fragment,

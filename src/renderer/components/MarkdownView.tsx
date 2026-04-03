@@ -3,32 +3,68 @@ import { useMarkdown } from '../hooks/useMarkdown';
 
 type MarkdownViewProps = {
   readonly content: string;
-  readonly initialScrollRatio?: number;
-  readonly onScrollRatioChange?: (ratio: number) => void;
+  readonly initialLine?: number;
+  readonly onTopLineChange?: (line: number) => void;
 };
 
-export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialScrollRatio, onScrollRatioChange }) => {
+const getTopVisibleLine = (container: HTMLElement): number => {
+  const elements = container.querySelectorAll<HTMLElement>('[data-source-line]');
+  const scrollTop = container.scrollTop;
+
+  let closestLine = 1;
+  let closestDistance = Infinity;
+
+  elements.forEach((el) => {
+    const distance = Math.abs(el.offsetTop - scrollTop);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestLine = parseInt(el.dataset['sourceLine'] ?? '1', 10);
+    }
+  });
+
+  return closestLine;
+};
+
+const scrollToLine = (container: HTMLElement, line: number): void => {
+  const el = container.querySelector<HTMLElement>(`[data-source-line="${String(line)}"]`);
+  if (el) {
+    container.scrollTop = el.offsetTop;
+    return;
+  }
+
+  // 정확한 라인이 없으면 가장 가까운 이전 라인을 찾음
+  const elements = Array.from(container.querySelectorAll<HTMLElement>('[data-source-line]'));
+  const best = elements.reduce<HTMLElement | undefined>((prev, candidate) => {
+    const candidateLine = parseInt(candidate.dataset['sourceLine'] ?? '0', 10);
+    return candidateLine <= line ? candidate : prev;
+  }, undefined);
+
+  if (best) {
+    container.scrollTop = best.offsetTop;
+  }
+};
+
+export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTopLineChange }) => {
   const rendered = useMarkdown(content);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || initialScrollRatio === undefined) return;
-    const scrollable = el.scrollHeight - el.clientHeight;
-    el.scrollTop = scrollable * initialScrollRatio;
-  }, [initialScrollRatio]);
+    if (!el || initialLine === undefined) return;
+    requestAnimationFrame(() => {
+      scrollToLine(el, initialLine);
+    });
+  }, [initialLine]);
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !onScrollRatioChange) return;
+    if (!el || !onTopLineChange) return;
     const handleScroll = () => {
-      const scrollable = el.scrollHeight - el.clientHeight;
-      const ratio = scrollable > 0 ? el.scrollTop / scrollable : 0;
-      onScrollRatioChange(ratio);
+      onTopLineChange(getTopVisibleLine(el));
     };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => { el.removeEventListener('scroll', handleScroll); };
-  }, [onScrollRatioChange]);
+  }, [onTopLineChange]);
 
   return (
     <div className="markdown-view" ref={containerRef}>

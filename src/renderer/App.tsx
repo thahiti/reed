@@ -12,7 +12,7 @@ export const App: FC = () => {
   const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const scrollRatioRef = useRef(0);
+  const topLineRef = useRef(1);
 
   const handleOpenFile = useCallback(async (filePath: string) => {
     const content = await window.api.invoke('file:read', filePath);
@@ -151,16 +151,16 @@ export const App: FC = () => {
             <MarkdownEditor
               content={activeTab.content}
               isDark={isDark}
-              initialScrollRatio={scrollRatioRef.current}
+              initialLine={topLineRef.current}
               onChange={handleEditorChange}
               onSave={() => { void handleSave(); }}
-              onScrollRatioChange={(r) => { scrollRatioRef.current = r; }}
+              onTopLineChange={(line) => { topLineRef.current = line; }}
             />
           ) : (
             <MarkdownView
               content={activeTab.content}
-              initialScrollRatio={scrollRatioRef.current}
-              onScrollRatioChange={(r) => { scrollRatioRef.current = r; }}
+              initialLine={topLineRef.current}
+              onTopLineChange={(line) => { topLineRef.current = line; }}
             />
           )
         ) : (
