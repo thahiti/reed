@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "build:app": "electron-vite build && electron-builder --mac --dir",
+    "build:dmg": "electron-vite build && electron-builder --mac"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -52,6 +54,7 @@
     "@typescript-eslint/parser": "^8.58.0",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^2.3.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
