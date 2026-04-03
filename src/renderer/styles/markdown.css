@@ -1,15 +1,13 @@
 .markdown-view {
-  display: flex;
-  justify-content: center;
-  padding: var(--spacing-content-padding);
   overflow-y: auto;
   height: 100%;
+  padding: var(--spacing-content-padding);
 }
 
 .markdown-content {
   max-width: var(--spacing-content-max-width);
+  margin: 0 auto;
   padding-bottom: 50vh;
-  width: 100%;
 }
 
 .heading {
