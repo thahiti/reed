@@ -1,5 +1,5 @@
-appId: com.mdviewer.app
-productName: MDViewer
+appId: com.reed.app
+productName: Reed
 directories:
   buildResources: build
 files:
@@ -12,12 +12,13 @@ mac:
   target:
     - dmg
   category: public.app-category.developer-tools
+  icon: build/icon.icns
 fileAssociations:
   - ext: md
     name: Markdown
-    role: Viewer
+    role: Editor
     mimeType: text/markdown
   - ext: markdown
     name: Markdown
-    role: Viewer
+    role: Editor
     mimeType: text/markdown

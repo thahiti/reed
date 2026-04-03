@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="pen" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#e8d5b7"/>
+      <stop offset="60%" stop-color="#c9a96e"/>
+      <stop offset="100%" stop-color="#8b7355"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- Reed pen (diagonal, bottom-left to top-right) -->
+  <g transform="translate(512, 512) rotate(-45) translate(-512, -512)">
+    <!-- Main reed shaft -->
+    <rect x="480" y="180" width="28" height="520" rx="14" fill="url(#pen)"/>
+
+    <!-- Pen nib (bottom) -->
+    <polygon points="494,700 480,750 508,750" fill="#c9a96e"/>
+    <line x1="494" y1="710" x2="494" y2="748" stroke="#8b7355" stroke-width="1.5"/>
+
+    <!-- Reed node rings -->
+    <rect x="476" y="340" width="36" height="6" rx="3" fill="#a08050" opacity="0.6"/>
+    <rect x="476" y="440" width="36" height="6" rx="3" fill="#a08050" opacity="0.6"/>
+
+    <!-- Small leaf accent -->
+    <path d="M508,300 Q560,260 540,200 Q520,250 508,280" fill="url(#leaf)" opacity="0.8"/>
+  </g>
+
+  <!-- Markdown lines (representing text) -->
+  <g opacity="0.3">
+    <rect x="260" y="720" width="200" height="8" rx="4" fill="#e8d5b7"/>
+    <rect x="260" y="752" width="320" height="8" rx="4" fill="#e8d5b7"/>
+    <rect x="260" y="784" width="260" height="8" rx="4" fill="#e8d5b7"/>
+  </g>
+
+  <!-- Subtle ink dot -->
+  <circle cx="370" cy="680" r="6" fill="#4ade80" opacity="0.5"/>
+</svg>
