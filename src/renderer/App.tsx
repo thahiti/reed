@@ -72,7 +72,10 @@ export const App: FC = () => {
       const files = Array.from(e.dataTransfer?.files ?? []);
       const mdFiles = files.filter((f) => f.name.endsWith('.md') || f.name.endsWith('.markdown'));
       mdFiles.forEach((file) => {
-        void handleOpenFile(file.path);
+        const filePath = window.api.getPathForFile(file);
+        if (filePath) {
+          void handleOpenFile(filePath);
+        }
       });
     };
     const handleDragOver = (e: DragEvent) => { e.preventDefault(); };
