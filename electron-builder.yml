@@ -1,0 +1,23 @@
+appId: com.mdviewer.app
+productName: MDViewer
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.*'
+  - '!{.eslintrc.cjs,.prettierrc,tsconfig*.json,vitest.config.*}'
+  - '!{tests,docs}/*'
+mac:
+  target:
+    - dmg
+  category: public.app-category.developer-tools
+fileAssociations:
+  - ext: md
+    name: Markdown
+    role: Viewer
+    mimeType: text/markdown
+  - ext: markdown
+    name: Markdown
+    role: Viewer
+    mimeType: text/markdown

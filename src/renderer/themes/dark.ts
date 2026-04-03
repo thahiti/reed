@@ -1,0 +1,46 @@
+import type { Theme } from './types';
+
+export const darkTheme: Theme = {
+  name: 'dark',
+  fonts: {
+    body: 'Inter, Pretendard, -apple-system, system-ui, sans-serif',
+    code: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+    bodySize: '16px',
+    codeSize: '14px',
+    lineHeight: '1.7',
+    codeLineHeight: '1.5',
+  },
+  colors: {
+    bg: '#0d1117',
+    text: '#e6edf3',
+    textSecondary: '#8b949e',
+    heading: '#f0f6fc',
+    link: '#58a6ff',
+    linkHover: '#79c0ff',
+    codeBg: '#161b22',
+    codeText: '#e6edf3',
+    blockquoteBg: 'transparent',
+    blockquoteBorder: '#3b434b',
+    blockquoteText: '#8b949e',
+    tableBorder: '#30363d',
+    tableHeaderBg: '#161b22',
+    tableStripeBg: '#161b22',
+    divider: '#21262d',
+    selection: '#264f78',
+  },
+  spacing: {
+    paragraph: '16px',
+    headingMarginTop: '24px',
+    headingMarginBottom: '16px',
+    contentMaxWidth: '780px',
+    contentPadding: '32px',
+  },
+  headingScale: {
+    h1: '2em',
+    h2: '1.5em',
+    h3: '1.25em',
+    h4: '1em',
+    h5: '0.875em',
+    h6: '0.85em',
+  },
+};

@@ -3,7 +3,30 @@
     "allow": [
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Read(//Users/randy/.claude/**)",
+      "Bash(git checkout:*)",
+      "Read(//private/tmp/**)",
+      "Bash(rm -rf mdviewer-scaffold)",
+      "Bash(mkdir mdviewer-scaffold:*)",
+      "Bash(npm create:*)",
+      "Bash(npx --yes degit alex8088/electron-vite-boilerplate#react-ts mdviewer-scaffold)",
+      "Bash(npx --yes @quick-start/create-electron@latest mdviewer-scaffold --template react-ts --skip-install)",
+      "Bash(printf \"mdviewer\\\\n\")",
+      "Bash(npx --yes @quick-start/create-electron@latest mdviewer-scaffold -t react-ts)",
+      "Read(//tmp/**)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(npx pnpm:*)",
+      "Bash(pnpm config:*)",
+      "Bash(node -e ':*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(./node_modules/.bin/eslint src/shared/types.ts src/preload/preload.ts tests/shared/types.test.ts)",
+      "Bash(git commit:*)",
+      "Bash(pnpm add:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
