@@ -7,7 +7,7 @@
 .markdown-content {
   max-width: var(--spacing-content-max-width);
   margin: 0 auto;
-  padding-bottom: 50vh;
+  padding-bottom: 16vh;
 }
 
 .heading {

@@ -24,7 +24,7 @@ const lightEditorTheme = EditorView.theme({
   '.cm-content': {
     fontFamily: 'var(--font-code)',
     lineHeight: 'var(--line-height)',
-    padding: '16px 0 50vh',
+    padding: '16px 0 16vh',
   },
   '.cm-scroller': {
     overflow: 'auto',
