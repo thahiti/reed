@@ -133,6 +133,17 @@ export const App: FC = () => {
     return unsubscribe;
   }, [handleOpenFile]);
 
+  // Help — render markdown help as a tab
+  useEffect(() => {
+    const unsubscribe = window.api.on('app:open-help', (content: unknown) => {
+      if (typeof content === 'string') {
+        openTab('reed://help', 'Help', content);
+        setIsEditMode(false);
+      }
+    });
+    return unsubscribe;
+  }, [openTab]);
+
   const isDark = theme.name === 'dark';
 
   return (
