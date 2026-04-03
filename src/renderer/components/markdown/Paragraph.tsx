@@ -1,5 +1,7 @@
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, HTMLAttributes, PropsWithChildren } from 'react';
 
-export const Paragraph: FC<PropsWithChildren> = ({ children }) => (
-  <p className="paragraph">{children}</p>
+type ParagraphProps = PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>;
+
+export const Paragraph: FC<ParagraphProps> = ({ children, ...rest }) => (
+  <p className="paragraph" {...rest}>{children}</p>
 );

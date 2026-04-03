@@ -1,3 +1,5 @@
-import type { FC } from 'react';
+import type { FC, HTMLAttributes } from 'react';
 
-export const Divider: FC = () => <hr className="divider" />;
+type DividerProps = HTMLAttributes<HTMLHRElement>;
+
+export const Divider: FC<DividerProps> = (props) => <hr className="divider" {...props} />;

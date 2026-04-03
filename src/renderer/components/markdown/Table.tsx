@@ -1,7 +1,9 @@
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, HTMLAttributes, PropsWithChildren } from 'react';
 
-export const Table: FC<PropsWithChildren> = ({ children }) => (
-  <div className="table-wrapper">
+type TableProps = PropsWithChildren<HTMLAttributes<HTMLTableElement>>;
+
+export const Table: FC<TableProps> = ({ children, ...rest }) => (
+  <div className="table-wrapper" {...rest}>
     <table className="table">{children}</table>
   </div>
 );

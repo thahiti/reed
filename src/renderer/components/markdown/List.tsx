@@ -1,12 +1,14 @@
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, HTMLAttributes, PropsWithChildren } from 'react';
 
-type ListProps = PropsWithChildren<{
-  readonly ordered?: boolean;
-}>;
+type ListProps = PropsWithChildren<
+  HTMLAttributes<HTMLUListElement | HTMLOListElement> & {
+    readonly ordered?: boolean;
+  }
+>;
 
-export const List: FC<ListProps> = ({ ordered, children }) => {
+export const List: FC<ListProps> = ({ ordered, children, ...rest }) => {
   const Tag = ordered ? 'ol' : 'ul';
-  return <Tag className="list">{children}</Tag>;
+  return <Tag className="list" {...rest}>{children}</Tag>;
 };
 
 export const ListItem: FC<PropsWithChildren> = ({ children }) => (
