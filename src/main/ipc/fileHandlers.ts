@@ -1,5 +1,5 @@
 import { ipcMain, dialog, shell, BrowserWindow } from 'electron';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 
 export const readFileContent = async (filePath: string): Promise<string> =>
@@ -44,5 +44,9 @@ export const registerFileHandlers = (): void => {
 
   ipcMain.handle('file:open-external', (_event, url: string) =>
     shell.openExternal(url),
+  );
+
+  ipcMain.handle('file:write', (_event, filePath: string, content: string) =>
+    writeFile(filePath, content, 'utf-8'),
   );
 };

@@ -15,7 +15,7 @@ export const useTabs = () => {
         setActiveTabId(existing.id);
         return prev;
       }
-      const newTab: Tab = { id: generateId(), filePath, fileName, content };
+      const newTab: Tab = { id: generateId(), filePath, fileName, content, modified: false };
       setActiveTabId(newTab.id);
       return [...prev, newTab];
     });
@@ -37,7 +37,19 @@ export const useTabs = () => {
     });
   }, []);
 
+  const updateTabContent = useCallback((tabId: string, content: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, content, modified: true } : t)),
+    );
+  }, []);
+
+  const markTabSaved = useCallback((tabId: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, modified: false } : t)),
+    );
+  }, []);
+
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
-  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId };
+  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved };
 };

@@ -3,13 +3,15 @@ import { useTheme } from './hooks/useTheme';
 import { useTabs } from './hooks/useTabs';
 import { TabBar } from './components/TabBar';
 import { MarkdownView } from './components/MarkdownView';
+import { MarkdownEditor } from './components/MarkdownEditor';
 import { Welcome } from './components/Welcome';
 import { QuickOpen } from './components/QuickOpen';
 
 export const App: FC = () => {
-  useTheme();
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab } = useTabs();
+  const { theme } = useTheme();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const handleOpenFile = useCallback(async (filePath: string) => {
     const content = await window.api.invoke('file:read', filePath);
@@ -26,6 +28,18 @@ export const App: FC = () => {
     }
   }, [handleOpenFile]);
 
+  const handleSave = useCallback(async () => {
+    if (!activeTab) return;
+    await window.api.invoke('file:write', activeTab.filePath, activeTab.content);
+    markTabSaved(activeTab.id);
+  }, [activeTab, markTabSaved]);
+
+  const handleEditorChange = useCallback((content: string) => {
+    if (activeTab) {
+      updateTabContent(activeTab.id, content);
+    }
+  }, [activeTab, updateTabContent]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,6 +52,26 @@ export const App: FC = () => {
       if (e.metaKey && e.key === 'p') {
         e.preventDefault();
         setIsQuickOpenOpen(true);
+      }
+      // Cmd+S — Save
+      if (e.metaKey && e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+      }
+      // t — Toggle edit mode (only when not in edit mode or when no input focused)
+      if (e.key === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.classList.contains('cm-content');
+        if (!isInputFocused) {
+          e.preventDefault();
+          setIsEditMode((prev) => !prev);
+        }
+      }
+      // Escape — Exit edit mode
+      if (e.key === 'Escape' && isEditMode) {
+        setIsEditMode(false);
       }
       // Cmd+1~9 — Switch tab
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
@@ -63,7 +97,7 @@ export const App: FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog]);
+  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, isEditMode]);
 
   // Drag & Drop
   useEffect(() => {
@@ -98,6 +132,8 @@ export const App: FC = () => {
     return unsubscribe;
   }, [handleOpenFile]);
 
+  const isDark = theme.name === 'dark';
+
   return (
     <div className="app">
       {tabs.length > 0 && (
@@ -110,11 +146,27 @@ export const App: FC = () => {
       )}
       <main className="app-content">
         {activeTab ? (
-          <MarkdownView content={activeTab.content} />
+          isEditMode ? (
+            <MarkdownEditor
+              content={activeTab.content}
+              isDark={isDark}
+              onChange={handleEditorChange}
+              onSave={() => { void handleSave(); }}
+            />
+          ) : (
+            <MarkdownView content={activeTab.content} />
+          )
         ) : (
           <Welcome />
         )}
       </main>
+      {activeTab && (
+        <div className="mode-indicator">
+          <span className={`mode-indicator-dot ${isEditMode ? 'mode-indicator-dot-edit' : 'mode-indicator-dot-read'}`} />
+          {isEditMode ? 'Edit' : 'Read'}
+          {activeTab.modified && <span className="mode-indicator-modified">●</span>}
+        </div>
+      )}
       <QuickOpen
         isOpen={isQuickOpenOpen}
         onClose={() => { setIsQuickOpenOpen(false); }}
