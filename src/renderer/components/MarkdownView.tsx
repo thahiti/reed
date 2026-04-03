@@ -1,9 +1,11 @@
 import { type FC, useCallback, useEffect, useRef } from 'react';
 import { useMarkdown } from '../hooks/useMarkdown';
+import type { ScrollSettings } from '../../shared/types';
 
 type MarkdownViewProps = {
   readonly content: string;
   readonly initialLine?: number;
+  readonly scrollSettings: ScrollSettings;
   readonly onTopLineChange?: (line: number) => void;
 };
 
@@ -44,7 +46,7 @@ const scrollToLine = (container: HTMLElement, line: number): void => {
   }
 };
 
-export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTopLineChange }) => {
+export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, scrollSettings, onTopLineChange }) => {
   const rendered = useMarkdown(content);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,7 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTo
 
   // Vim-style keyboard navigation
   const pendingGRef = useRef(false);
+  const LINE_HEIGHT = 24;
 
   const handleVimKeys = useCallback((e: KeyboardEvent) => {
     const el = containerRef.current;
@@ -77,25 +80,25 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTo
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-    const STEP = 60;
-    const HALF_PAGE = el.clientHeight / 2;
+    const step = scrollSettings.stepLines * LINE_HEIGHT;
+    const page = scrollSettings.pageLines * LINE_HEIGHT;
 
     switch (e.key) {
       case 'j':
         e.preventDefault();
-        el.scrollBy({ top: STEP, behavior: 'smooth' });
+        el.scrollTop += step;
         break;
       case 'k':
         e.preventDefault();
-        el.scrollBy({ top: -STEP, behavior: 'smooth' });
+        el.scrollTop -= step;
         break;
       case 'd':
         e.preventDefault();
-        el.scrollBy({ top: HALF_PAGE, behavior: 'smooth' });
+        el.scrollTop += page;
         break;
       case 'u':
         e.preventDefault();
-        el.scrollBy({ top: -HALF_PAGE, behavior: 'smooth' });
+        el.scrollTop -= page;
         break;
       case 'G':
         e.preventDefault();
@@ -112,7 +115,7 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, onTo
         }
         break;
     }
-  }, []);
+  }, [scrollSettings]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleVimKeys);

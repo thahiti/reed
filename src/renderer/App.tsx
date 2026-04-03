@@ -6,9 +6,11 @@ import { MarkdownView } from './components/MarkdownView';
 import { MarkdownEditor } from './components/MarkdownEditor';
 import { Welcome } from './components/Welcome';
 import { QuickOpen } from './components/QuickOpen';
+import { useSettings } from './hooks/useSettings';
 
 export const App: FC = () => {
   const { theme } = useTheme();
+  const settings = useSettings();
   const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -171,6 +173,7 @@ export const App: FC = () => {
             <MarkdownView
               content={activeTab.content}
               initialLine={topLineRef.current}
+              scrollSettings={settings.scroll}
               onTopLineChange={(line) => { topLineRef.current = line; }}
             />
           )

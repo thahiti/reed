@@ -3,6 +3,7 @@ import { join } from 'path';
 import { registerFileHandlers } from './ipc/fileHandlers';
 import { registerHistoryHandlers } from './ipc/historyHandlers';
 import { registerThemeHandlers } from './ipc/themeHandlers';
+import { registerSettingsHandlers } from './ipc/settingsHandlers';
 import { createMenu } from './menu';
 
 const createWindow = (): BrowserWindow => {
@@ -30,6 +31,7 @@ void app.whenReady().then(() => {
   registerFileHandlers();
   registerThemeHandlers();
   registerHistoryHandlers();
+  registerSettingsHandlers();
   const mainWindow = createWindow();
   const menu = createMenu(mainWindow);
   Menu.setApplicationMenu(menu);

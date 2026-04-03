@@ -10,6 +10,9 @@ export type IpcChannels = {
   'history:get': { args: readonly []; return: ReadonlyArray<HistoryEntry> };
   'history:add': { args: readonly [filePath: string]; return: undefined };
   'theme:get-system': { args: readonly []; return: 'light' | 'dark' };
+  'settings:get': { args: readonly []; return: AppSettings };
+  'settings:set': { args: readonly [settings: AppSettings]; return: undefined };
+  'settings:open-file': { args: readonly []; return: undefined };
 };
 
 export type HistoryEntry = {
@@ -29,4 +32,33 @@ export type Tab = {
 export type TabState = {
   readonly tabs: ReadonlyArray<Tab>;
   readonly activeTabId: string | null;
+};
+
+export type ScrollSettings = {
+  readonly stepLines: number;
+  readonly pageLines: number;
+};
+
+export type ThemeOverrides = {
+  readonly fonts?: Partial<{
+    readonly body: string;
+    readonly code: string;
+    readonly bodySize: string;
+    readonly codeSize: string;
+    readonly lineHeight: string;
+  }>;
+  readonly colors?: Partial<{
+    readonly bg: string;
+    readonly text: string;
+    readonly heading: string;
+    readonly link: string;
+    readonly codeBg: string;
+    readonly codeText: string;
+  }>;
+};
+
+export type AppSettings = {
+  readonly scroll: ScrollSettings;
+  readonly lightTheme?: ThemeOverrides;
+  readonly darkTheme?: ThemeOverrides;
 };
