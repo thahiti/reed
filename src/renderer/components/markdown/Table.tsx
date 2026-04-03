@@ -1,0 +1,33 @@
+import type { FC, PropsWithChildren } from 'react';
+
+export const Table: FC<PropsWithChildren> = ({ children }) => (
+  <div className="table-wrapper">
+    <table className="table">{children}</table>
+  </div>
+);
+
+export const TableHead: FC<PropsWithChildren> = ({ children }) => (
+  <thead className="table-head">{children}</thead>
+);
+
+export const TableBody: FC<PropsWithChildren> = ({ children }) => (
+  <tbody className="table-body">{children}</tbody>
+);
+
+export const TableRow: FC<PropsWithChildren> = ({ children }) => (
+  <tr className="table-row">{children}</tr>
+);
+
+type TableCellProps = PropsWithChildren<{
+  readonly isHeader?: boolean;
+  readonly align?: 'left' | 'center' | 'right';
+}>;
+
+export const TableCell: FC<TableCellProps> = ({ isHeader, align, children }) => {
+  const Tag = isHeader ? 'th' : 'td';
+  return (
+    <Tag className="table-cell" style={align ? { textAlign: align } : undefined}>
+      {children}
+    </Tag>
+  );
+};

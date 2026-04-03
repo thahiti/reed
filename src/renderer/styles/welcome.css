@@ -1,0 +1,19 @@
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--color-text-secondary);
+}
+
+.welcome-title {
+  font-size: 48px;
+  font-weight: 200;
+  color: var(--color-text);
+  letter-spacing: -1px;
+}
+
+.welcome-subtitle { font-size: 18px; }
+.welcome-hint { font-size: 14px; opacity: 0.6; }
