@@ -16,7 +16,7 @@ export const TabBar: FC<TabBarProps> = ({ tabs, activeTabId, onSelect, onClose }
         className={`tab-item ${tab.id === activeTabId ? 'tab-active' : ''}`}
         onClick={() => { onSelect(tab.id); }}
       >
-        <span className="tab-title">{tab.fileName}</span>
+        <span className="tab-title">{tab.modified ? `● ${tab.fileName}` : tab.fileName}</span>
         <button
           className="tab-close"
           onClick={(e) => {
