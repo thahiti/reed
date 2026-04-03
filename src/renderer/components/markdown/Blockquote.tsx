@@ -1,5 +1,7 @@
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, BlockquoteHTMLAttributes, PropsWithChildren } from 'react';
 
-export const Blockquote: FC<PropsWithChildren> = ({ children }) => (
-  <blockquote className="blockquote">{children}</blockquote>
+type BlockquoteProps = PropsWithChildren<BlockquoteHTMLAttributes<HTMLQuoteElement>>;
+
+export const Blockquote: FC<BlockquoteProps> = ({ children, ...rest }) => (
+  <blockquote className="blockquote" {...rest}>{children}</blockquote>
 );
