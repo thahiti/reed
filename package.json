@@ -1,5 +1,5 @@
 {
-  "name": "mdviewer",
+  "name": "reed",
   "version": "1.0.0",
   "description": "Beautiful read-only markdown viewer",
   "main": "./out/main/main.js",

@@ -4,7 +4,7 @@ import { writeFileSync, unlinkSync } from 'fs';
 
 const appPath = resolve(__dirname, '../../out/main/main.js');
 
-test.describe('MDViewer E2E', () => {
+test.describe('Reed E2E', () => {
   test('should launch and show welcome screen', async () => {
     const app = await electron.launch({ args: [appPath] });
     const page = await app.firstWindow();
@@ -12,7 +12,7 @@ test.describe('MDViewer E2E', () => {
     await page.waitForLoadState('domcontentloaded');
 
     const title = await page.locator('.welcome-title').textContent();
-    expect(title).toBe('MDViewer');
+    expect(title).toBe('Reed');
 
     const subtitle = await page.locator('.welcome-subtitle').textContent();
     expect(subtitle).toContain('마크다운');
@@ -27,7 +27,7 @@ test.describe('MDViewer E2E', () => {
     await page.waitForLoadState('domcontentloaded');
 
     const windowTitle = await page.title();
-    expect(windowTitle).toBe('MDViewer');
+    expect(windowTitle).toBe('Reed');
 
     await app.close();
   });
