@@ -8,6 +8,7 @@
 
 .markdown-content {
   max-width: var(--spacing-content-max-width);
+  padding-bottom: 40vh;
   width: 100%;
 }
 
