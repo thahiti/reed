@@ -9,10 +9,10 @@ import { oneDark } from '@codemirror/theme-one-dark';
 type MarkdownEditorProps = {
   readonly content: string;
   readonly isDark: boolean;
-  readonly initialScrollRatio?: number;
+  readonly initialLine?: number;
   readonly onChange: (content: string) => void;
   readonly onSave: () => void;
-  readonly onScrollRatioChange?: (ratio: number) => void;
+  readonly onTopLineChange?: (line: number) => void;
 };
 
 const lightEditorTheme = EditorView.theme({
@@ -42,7 +42,14 @@ const lightEditorTheme = EditorView.theme({
   },
 });
 
-export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, initialScrollRatio, onChange, onSave, onScrollRatioChange }) => {
+const getTopVisibleLine = (view: EditorView): number => {
+  const scrollTop = view.scrollDOM.scrollTop;
+  const block = view.lineBlockAtHeight(scrollTop);
+  const line = view.state.doc.lineAt(block.from);
+  return line.number;
+};
+
+export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, initialLine, onChange, onSave, onTopLineChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -94,28 +101,23 @@ export const MarkdownEditor: FC<MarkdownEditorProps> = ({ content, isDark, initi
 
     viewRef.current = view;
 
-    // Restore scroll position
-    if (initialScrollRatio !== undefined) {
+    // Restore scroll to initial line
+    if (initialLine !== undefined && initialLine > 1) {
       requestAnimationFrame(() => {
-        const scroller = containerRef.current?.querySelector('.cm-scroller');
-        if (scroller) {
-          const scrollable = scroller.scrollHeight - scroller.clientHeight;
-          scroller.scrollTop = scrollable * initialScrollRatio;
-        }
+        const lineCount = view.state.doc.lines;
+        const targetLine = Math.min(initialLine, lineCount);
+        const lineInfo = view.state.doc.line(targetLine);
+        const block = view.lineBlockAt(lineInfo.from);
+        view.scrollDOM.scrollTop = block.top;
       });
     }
 
-    // Track scroll position
-    if (onScrollRatioChange) {
-      const scroller = containerRef.current.querySelector('.cm-scroller');
-      if (scroller) {
-        const handleScroll = () => {
-          const scrollable = scroller.scrollHeight - scroller.clientHeight;
-          const ratio = scrollable > 0 ? scroller.scrollTop / scrollable : 0;
-          onScrollRatioChange(ratio);
-        };
-        scroller.addEventListener('scroll', handleScroll, { passive: true });
-      }
+    // Track top visible line on scroll
+    if (onTopLineChange) {
+      const handleScroll = () => {
+        onTopLineChange(getTopVisibleLine(view));
+      };
+      view.scrollDOM.addEventListener('scroll', handleScroll, { passive: true });
     }
 
     return () => {
