@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from 'react';
+import { type FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from './hooks/useTheme';
 import { useTabs } from './hooks/useTabs';
 import { TabBar } from './components/TabBar';
@@ -12,6 +12,7 @@ export const App: FC = () => {
   const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const scrollRatioRef = useRef(0);
 
   const handleOpenFile = useCallback(async (filePath: string) => {
     const content = await window.api.invoke('file:read', filePath);
@@ -150,11 +151,17 @@ export const App: FC = () => {
             <MarkdownEditor
               content={activeTab.content}
               isDark={isDark}
+              initialScrollRatio={scrollRatioRef.current}
               onChange={handleEditorChange}
               onSave={() => { void handleSave(); }}
+              onScrollRatioChange={(r) => { scrollRatioRef.current = r; }}
             />
           ) : (
-            <MarkdownView content={activeTab.content} />
+            <MarkdownView
+              content={activeTab.content}
+              initialScrollRatio={scrollRatioRef.current}
+              onScrollRatioChange={(r) => { scrollRatioRef.current = r; }}
+            />
           )
         ) : (
           <Welcome />
