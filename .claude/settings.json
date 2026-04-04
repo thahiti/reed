@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "git diff --stat HEAD 2>/dev/null"
+            "command": "echo '=== Uncommitted Changes ===' && git diff --stat HEAD 2>/dev/null; CHANGED=$(git diff --name-only HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo \"⚠️  WARNING: $CHANGED file(s) not committed! Run atomic-commit before stopping.\"; fi"
           }
         ]
       }
