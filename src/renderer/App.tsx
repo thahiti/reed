@@ -62,7 +62,7 @@ export const App: FC = () => {
         void handleSave();
       }
       // t — Toggle edit mode (only when not in edit mode or when no input focused)
-      if (e.key === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.code === 'KeyT' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const target = e.target as HTMLElement;
         const isInputFocused = target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||

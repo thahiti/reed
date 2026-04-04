@@ -90,29 +90,32 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, scro
     const step = scrollSettings.stepLines * LINE_HEIGHT;
     const page = scrollSettings.pageLines * LINE_HEIGHT;
 
-    switch (e.key) {
-      case 'j':
+    const code = e.code;
+
+    switch (code) {
+      case 'KeyJ':
         e.preventDefault();
         el.scrollTop += step;
         break;
-      case 'k':
+      case 'KeyK':
         e.preventDefault();
         el.scrollTop -= step;
         break;
-      case 'd':
+      case 'KeyD':
         e.preventDefault();
         el.scrollTop += page;
         break;
-      case 'u':
+      case 'KeyU':
         e.preventDefault();
         el.scrollTop -= page;
         break;
-      case 'G':
-        e.preventDefault();
-        el.scrollTop = el.scrollHeight;
-        break;
-      case 'g':
-        if (pendingGRef.current) {
+      case 'KeyG':
+        if (e.shiftKey) {
+          // G (Shift+g) — go to end
+          e.preventDefault();
+          el.scrollTop = el.scrollHeight;
+        } else if (pendingGRef.current) {
+          // gg — go to top
           e.preventDefault();
           el.scrollTop = 0;
           pendingGRef.current = false;
@@ -121,17 +124,17 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, scro
           setTimeout(() => { pendingGRef.current = false; }, 500);
         }
         break;
-      case '/':
+      case 'KeyN':
+        e.preventDefault();
+        if (e.shiftKey) {
+          prevMatch();
+        } else {
+          nextMatch();
+        }
+        break;
+      case 'Slash':
         e.preventDefault();
         openSearch();
-        break;
-      case 'n':
-        e.preventDefault();
-        nextMatch();
-        break;
-      case 'N':
-        e.preventDefault();
-        prevMatch();
         break;
     }
   }, [scrollSettings, isSearchOpen, openSearch, nextMatch, prevMatch]);
