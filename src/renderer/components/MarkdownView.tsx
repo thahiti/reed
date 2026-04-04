@@ -102,12 +102,12 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, scro
         break;
       case 'G':
         e.preventDefault();
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        el.scrollTop = el.scrollHeight;
         break;
       case 'g':
         if (pendingGRef.current) {
           e.preventDefault();
-          el.scrollTo({ top: 0, behavior: 'smooth' });
+          el.scrollTop = 0;
           pendingGRef.current = false;
         } else {
           pendingGRef.current = true;
