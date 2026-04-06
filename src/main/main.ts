@@ -3,7 +3,7 @@ import { join } from 'path';
 import { registerFileHandlers } from './ipc/fileHandlers';
 import { registerHistoryHandlers } from './ipc/historyHandlers';
 import { registerThemeHandlers } from './ipc/themeHandlers';
-import { registerSettingsHandlers } from './ipc/settingsHandlers';
+import { getSettings, registerSettingsHandlers } from './ipc/settingsHandlers';
 import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
 
@@ -35,7 +35,8 @@ void app.whenReady().then(() => {
   registerHistoryHandlers();
   registerSettingsHandlers();
   const mainWindow = createWindow();
-  const menu = createMenu(mainWindow);
+  const settings = getSettings();
+  const menu = createMenu(mainWindow, settings);
   Menu.setApplicationMenu(menu);
 
   const fileArg = process.argv.find((arg) => arg.endsWith('.md') || arg.endsWith('.markdown'));

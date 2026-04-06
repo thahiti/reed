@@ -1,5 +1,7 @@
 import { app, Menu, shell, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
 import { getSettingsPath } from './ipc/settingsHandlers';
+import { mergeKeybindings } from '../shared/keybindings';
+import type { AppSettings } from '../shared/types';
 
 const helpContent = `
 # Reed — Keyboard Shortcuts
@@ -82,7 +84,8 @@ const showHelp = (mainWindow: BrowserWindow): void => {
   mainWindow.webContents.send('app:open-help', helpContent);
 };
 
-export const createMenu = (mainWindow: BrowserWindow): Menu => {
+export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Menu => {
+  const kb = mergeKeybindings(settings.keybindings);
   const template: ReadonlyArray<MenuItemConstructorOptions> = [
     {
       label: app.name,
@@ -109,24 +112,24 @@ export const createMenu = (mainWindow: BrowserWindow): Menu => {
       submenu: [
         {
           label: 'Open...',
-          accelerator: 'Cmd+O',
+          accelerator: kb['file:open'],
           click: () => { mainWindow.webContents.send('menu:open-file'); },
         },
         {
           label: 'Quick Open',
-          accelerator: 'Cmd+P',
+          accelerator: kb['file:quick-open'],
           click: () => { mainWindow.webContents.send('menu:quick-open'); },
         },
         { type: 'separator' },
         {
           label: 'Save',
-          accelerator: 'Cmd+S',
+          accelerator: kb['file:save'],
           click: () => { mainWindow.webContents.send('menu:save'); },
         },
         { type: 'separator' },
         {
           label: 'Close Tab',
-          accelerator: 'Cmd+W',
+          accelerator: kb['tab:close'],
           click: () => { mainWindow.webContents.send('menu:close-tab'); },
         },
       ],
@@ -148,9 +151,20 @@ export const createMenu = (mainWindow: BrowserWindow): Menu => {
       submenu: [
         {
           label: 'Toggle Edit Mode',
-          accelerator: 'T',
+          accelerator: kb['view:toggle-edit'],
           click: () => { mainWindow.webContents.send('menu:toggle-edit'); },
           registerAccelerator: false,
+        },
+        { type: 'separator' },
+        {
+          label: 'Previous Tab',
+          accelerator: kb['tab:prev'],
+          click: () => { mainWindow.webContents.send('menu:prev-tab'); },
+        },
+        {
+          label: 'Next Tab',
+          accelerator: kb['tab:next'],
+          click: () => { mainWindow.webContents.send('menu:next-tab'); },
         },
         { type: 'separator' },
         { role: 'zoomIn' },
@@ -182,7 +196,7 @@ export const createMenu = (mainWindow: BrowserWindow): Menu => {
         { type: 'separator' },
         {
           label: 'Keyboard Shortcuts',
-          accelerator: 'Cmd+/',
+          accelerator: kb['help:show'],
           click: () => { showHelp(mainWindow); },
         },
       ],
