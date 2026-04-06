@@ -49,7 +49,15 @@ export const useTabs = () => {
     );
   }, []);
 
+  const reloadTab = useCallback((filePath: string, content: string) => {
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.filePath === filePath && !t.modified ? { ...t, content } : t,
+      ),
+    );
+  }, []);
+
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
-  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved };
+  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab };
 };

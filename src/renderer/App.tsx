@@ -15,7 +15,7 @@ export const App: FC = () => {
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const topLineRef = useRef(1);
@@ -25,6 +25,7 @@ export const App: FC = () => {
     const parts = filePath.split('/');
     const fileName = parts[parts.length - 1] ?? filePath;
     openTab(filePath, fileName, content);
+    void window.api.invoke('file:watch', filePath);
     await window.api.invoke('history:add', filePath);
   }, [openTab]);
 
@@ -46,6 +47,17 @@ export const App: FC = () => {
       updateTabContent(activeTab.id, content);
     }
   }, [activeTab, updateTabContent]);
+
+  const handleCloseTab = useCallback((tabId: string) => {
+    const tab = tabs.find((t) => t.id === tabId);
+    if (tab) {
+      const otherWithSameFile = tabs.filter((t) => t.id !== tabId && t.filePath === tab.filePath);
+      if (otherWithSameFile.length === 0) {
+        void window.api.invoke('file:unwatch', tab.filePath);
+      }
+    }
+    closeTab(tabId);
+  }, [tabs, closeTab]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -153,6 +165,17 @@ export const App: FC = () => {
     return unsubscribe;
   }, [handleOpenFile]);
 
+  // File watcher — reload content on external change
+  useEffect(() => {
+    const unsubscribe = window.api.on('file:changed', (filePath: unknown) => {
+      if (typeof filePath !== 'string') return;
+      void window.api.invoke('file:read', filePath).then((content) => {
+        reloadTab(filePath, content);
+      });
+    });
+    return unsubscribe;
+  }, [reloadTab]);
+
   // Help — render markdown help as a tab
   useEffect(() => {
     const unsubscribe = window.api.on('app:open-help', (content: unknown) => {
@@ -182,10 +205,10 @@ export const App: FC = () => {
   // Menu — close tab
   useEffect(() => {
     const unsub = window.api.on('menu:close-tab', () => {
-      if (activeTab) closeTab(activeTab.id);
+      if (activeTab) handleCloseTab(activeTab.id);
     });
     return unsub;
-  }, [activeTab, closeTab]);
+  }, [activeTab, handleCloseTab]);
 
   const isDark = theme.name === 'dark';
 
@@ -196,7 +219,7 @@ export const App: FC = () => {
           tabs={tabs}
           activeTabId={activeTabId}
           onSelect={setActiveTab}
-          onClose={closeTab}
+          onClose={handleCloseTab}
         />
       )}
       <main className="app-content">
