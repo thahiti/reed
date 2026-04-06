@@ -6,6 +6,7 @@ import type { ScrollSettings } from '../../shared/types';
 
 type MarkdownViewProps = {
   readonly content: string;
+  readonly filePath?: string;
   readonly initialLine?: number;
   readonly scrollSettings: ScrollSettings;
   readonly onTopLineChange?: (line: number) => void;
@@ -47,8 +48,8 @@ const scrollToLine = (container: HTMLElement, line: number): void => {
   }
 };
 
-export const MarkdownView: FC<MarkdownViewProps> = ({ content, initialLine, scrollSettings, onTopLineChange }) => {
-  const rendered = useMarkdown(content);
+export const MarkdownView: FC<MarkdownViewProps> = ({ content, filePath, initialLine, scrollSettings, onTopLineChange }) => {
+  const rendered = useMarkdown(content, filePath);
   const containerRef = useRef<HTMLDivElement>(null);
   const {
     isSearchOpen, matchCount, currentMatch,

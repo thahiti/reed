@@ -172,6 +172,7 @@ export const App: FC = () => {
           ) : (
             <MarkdownView
               content={activeTab.content}
+              filePath={activeTab.filePath}
               initialLine={topLineRef.current}
               scrollSettings={settings.scroll}
               onTopLineChange={(line) => { topLineRef.current = line; }}

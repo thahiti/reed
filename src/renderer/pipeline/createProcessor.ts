@@ -21,6 +21,7 @@ import { Divider } from '../components/markdown/Divider';
 import { Checkbox } from '../components/markdown/Checkbox';
 import { MermaidDiagram } from '../components/markdown/MermaidDiagram';
 import { rehypeSourceLines } from './rehypeSourceLines';
+import { rehypeImageResolve } from './rehypeImageResolve';
 
 type AnyProps = Record<string, unknown>;
 
@@ -43,7 +44,7 @@ const getMermaidChart = (props: AnyProps): string => {
   return childEl.props?.children ?? '';
 };
 
-const buildProcessor = () => {
+const buildProcessor = (basePath: string) => {
   const processor = unified();
   processor.use(remarkParse);
   processor.use(remarkGfm);
@@ -51,6 +52,9 @@ const buildProcessor = () => {
   processor.use(remarkRehype);
   processor.use(rehypeKatex);
   processor.use(rehypeSourceLines);
+  if (basePath) {
+    processor.use(rehypeImageResolve, { basePath });
+  }
   processor.use(rehypeHighlight, { detect: true });
   processor.use(rehypeReact, {
     Fragment,
@@ -100,8 +104,8 @@ const buildProcessor = () => {
   return processor;
 };
 
-export const processMarkdown = (markdown: string): ReactElement => {
-  const processor = buildProcessor();
+export const processMarkdown = (markdown: string, basePath = ''): ReactElement => {
+  const processor = buildProcessor(basePath);
   const file = processor.processSync(markdown);
   return file.result as ReactElement;
 };
