@@ -61,4 +61,5 @@ export type AppSettings = {
   readonly scroll: ScrollSettings;
   readonly lightTheme?: ThemeOverrides;
   readonly darkTheme?: ThemeOverrides;
+  readonly keybindings?: Partial<Record<string, string>>;
 };
