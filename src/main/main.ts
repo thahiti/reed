@@ -4,6 +4,7 @@ import { registerFileHandlers } from './ipc/fileHandlers';
 import { registerHistoryHandlers } from './ipc/historyHandlers';
 import { registerThemeHandlers } from './ipc/themeHandlers';
 import { registerSettingsHandlers } from './ipc/settingsHandlers';
+import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
 
 const createWindow = (): BrowserWindow => {
@@ -28,6 +29,7 @@ const createWindow = (): BrowserWindow => {
 };
 
 void app.whenReady().then(() => {
+  registerImageProtocol();
   registerFileHandlers();
   registerThemeHandlers();
   registerHistoryHandlers();
