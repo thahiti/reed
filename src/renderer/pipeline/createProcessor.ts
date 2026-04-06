@@ -22,6 +22,7 @@ import { Checkbox } from '../components/markdown/Checkbox';
 import { MermaidDiagram } from '../components/markdown/MermaidDiagram';
 import { rehypeSourceLines } from './rehypeSourceLines';
 import { rehypeImageResolve } from './rehypeImageResolve';
+import { remarkStrongFallback } from './remarkStrongFallback';
 
 type AnyProps = Record<string, unknown>;
 
@@ -49,6 +50,7 @@ const buildProcessor = (basePath: string) => {
   processor.use(remarkParse);
   processor.use(remarkGfm);
   processor.use(remarkMath);
+  processor.use(remarkStrongFallback);
   processor.use(remarkRehype);
   processor.use(rehypeKatex);
   processor.use(rehypeSourceLines);

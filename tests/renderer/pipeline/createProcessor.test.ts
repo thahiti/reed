@@ -48,4 +48,12 @@ describe('createProcessor', () => {
     const rendered = JSON.stringify(result);
     expect(rendered).toContain('https://example.com/pic.png');
   });
+
+  it('should render bold when closing ** follows punctuation and precedes non-space', () => {
+    const md = '크기의 **정보 단위(Chunk)**로 분할';
+    const result = processMarkdown(md);
+    const rendered = JSON.stringify(result);
+    expect(rendered).toContain('strong');
+    expect(rendered).toContain('정보 단위(Chunk)');
+  });
 });
