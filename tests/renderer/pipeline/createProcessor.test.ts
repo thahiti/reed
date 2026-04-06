@@ -33,4 +33,19 @@ describe('createProcessor', () => {
     const result = processMarkdown(md);
     expect(result).toBeDefined();
   });
+
+  it('should resolve image src with basePath', () => {
+    const md = '![alt](images/pic.png)';
+    const result = processMarkdown(md, '/Users/randy/docs/readme.md');
+    expect(result).toBeDefined();
+    const rendered = JSON.stringify(result);
+    expect(rendered).toContain('md-image:///Users/randy/docs/images/pic.png');
+  });
+
+  it('should leave external image URLs unchanged', () => {
+    const md = '![alt](https://example.com/pic.png)';
+    const result = processMarkdown(md, '/Users/randy/docs/readme.md');
+    const rendered = JSON.stringify(result);
+    expect(rendered).toContain('https://example.com/pic.png');
+  });
 });
