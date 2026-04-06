@@ -116,4 +116,98 @@ test.describe('Reed E2E', () => {
       rmSync(fixtureDir, { recursive: true, force: true });
     }
   });
+
+  test('should auto-reload when file is modified externally', async () => {
+    const testFile = resolve(__dirname, '../../test-fixture-reload.md');
+    writeFileSync(testFile, '# Original Content');
+
+    try {
+      const app = await electron.launch({ args: [appPath] });
+      const page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+
+      // Open the file
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile);
+
+      await expect(page.locator('.tab-item')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.markdown-content h1')).toHaveText('Original Content');
+
+      // Modify file externally
+      writeFileSync(testFile, '# Updated Content');
+
+      // Wait for auto-reload (debounce 300ms + some buffer)
+      await expect(page.locator('.markdown-content h1')).toHaveText('Updated Content', {
+        timeout: 5000,
+      });
+
+      await app.close();
+    } finally {
+      try {
+        unlinkSync(testFile);
+      } catch {
+        /* file may not exist */
+      }
+    }
+  });
+
+  test('should navigate tabs with menu events', async () => {
+    const testFile1 = resolve(__dirname, '../../test-tab1.md');
+    const testFile2 = resolve(__dirname, '../../test-tab2.md');
+    writeFileSync(testFile1, '# Tab 1');
+    writeFileSync(testFile2, '# Tab 2');
+
+    try {
+      const app = await electron.launch({ args: [appPath] });
+      const page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+
+      // Open two files
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile1);
+      await expect(page.locator('.tab-item')).toHaveCount(1, { timeout: 5000 });
+
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile2);
+      await expect(page.locator('.tab-item')).toHaveCount(2, { timeout: 5000 });
+
+      // Tab 2 should be active (last opened)
+      await expect(page.locator('.markdown-content h1')).toHaveText('Tab 2');
+
+      // Navigate to previous tab via menu event
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('menu:prev-tab');
+      });
+
+      await expect(page.locator('.markdown-content h1')).toHaveText('Tab 1', { timeout: 3000 });
+
+      // Navigate to next tab via menu event
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('menu:next-tab');
+      });
+
+      await expect(page.locator('.markdown-content h1')).toHaveText('Tab 2', { timeout: 3000 });
+
+      await app.close();
+    } finally {
+      try {
+        unlinkSync(testFile1);
+      } catch {
+        /* file may not exist */
+      }
+      try {
+        unlinkSync(testFile2);
+      } catch {
+        /* file may not exist */
+      }
+    }
+  });
 });
