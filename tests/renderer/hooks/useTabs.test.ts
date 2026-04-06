@@ -71,6 +71,44 @@ describe('useTabs', () => {
     expect(result.current.activeTabId).not.toBeNull();
   });
 
+  it('should reload tab content when tab is not modified', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# Original');
+    });
+    act(() => {
+      result.current.reloadTab('/path/a.md', '# Updated');
+    });
+    expect(result.current.tabs[0]?.content).toBe('# Updated');
+  });
+
+  it('should not reload tab content when tab is modified', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# Original');
+    });
+    const tabId = result.current.tabs[0]?.id;
+    if (!tabId) throw new Error('tab not found');
+    act(() => {
+      result.current.updateTabContent(tabId, '# User edit');
+    });
+    act(() => {
+      result.current.reloadTab('/path/a.md', '# External change');
+    });
+    expect(result.current.tabs[0]?.content).toBe('# User edit');
+  });
+
+  it('should not reload tab when filePath does not match', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# Original');
+    });
+    act(() => {
+      result.current.reloadTab('/path/b.md', '# Updated');
+    });
+    expect(result.current.tabs[0]?.content).toBe('# Original');
+  });
+
   it('should return null activeTabId when all tabs closed', () => {
     const { result } = renderHook(() => useTabs());
     act(() => {
