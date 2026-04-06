@@ -7,6 +7,9 @@ import { getSettings, registerSettingsHandlers } from './ipc/settingsHandlers';
 import { registerFileWatchHandlers } from './ipc/fileWatchHandlers';
 import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
+import { createOpenFileQueue } from './openFileQueue';
+
+const openFileQueue = createOpenFileQueue();
 
 const createWindow = (): BrowserWindow => {
   const mainWindow = new BrowserWindow({
@@ -43,10 +46,14 @@ void app.whenReady().then(() => {
 
   const fileArg = process.argv.find((arg) => arg.endsWith('.md') || arg.endsWith('.markdown'));
   if (fileArg) {
-    mainWindow.webContents.on('did-finish-load', () => {
-      mainWindow.webContents.send('app:open-file', fileArg);
-    });
+    openFileQueue.enqueue(fileArg);
   }
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    openFileQueue.setSender((filePath) => {
+      mainWindow.webContents.send('app:open-file', filePath);
+    });
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -60,8 +67,5 @@ void app.whenReady().then(() => {
 
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
-  const win = BrowserWindow.getAllWindows()[0];
-  if (win) {
-    win.webContents.send('app:open-file', filePath);
-  }
+  openFileQueue.enqueue(filePath);
 });
