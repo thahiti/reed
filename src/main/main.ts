@@ -4,6 +4,7 @@ import { registerFileHandlers } from './ipc/fileHandlers';
 import { registerHistoryHandlers } from './ipc/historyHandlers';
 import { registerThemeHandlers } from './ipc/themeHandlers';
 import { getSettings, registerSettingsHandlers } from './ipc/settingsHandlers';
+import { registerFileWatchHandlers } from './ipc/fileWatchHandlers';
 import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
 
@@ -34,6 +35,7 @@ void app.whenReady().then(() => {
   registerThemeHandlers();
   registerHistoryHandlers();
   registerSettingsHandlers();
+  const fileWatcher = registerFileWatchHandlers();
   const mainWindow = createWindow();
   const settings = getSettings();
   const menu = createMenu(mainWindow, settings);
@@ -49,6 +51,11 @@ void app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  app.on('window-all-closed', () => {
+    fileWatcher.cleanup();
+    if (process.platform !== 'darwin') app.quit();
+  });
 });
 
 app.on('open-file', (event, filePath) => {
@@ -57,8 +64,4 @@ app.on('open-file', (event, filePath) => {
   if (win) {
     win.webContents.send('app:open-file', filePath);
   }
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
 });
