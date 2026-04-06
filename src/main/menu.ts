@@ -32,6 +32,8 @@ const helpContent = `
 | ⌘1–9 | Switch to tab N |
 | ⇧⌘[ | Previous tab |
 | ⇧⌘] | Next tab |
+| ⌃, | Previous tab |
+| ⌃. | Next tab |
 
 ## Navigation (Read Mode)
 | Shortcut | Action |
@@ -70,6 +72,27 @@ const helpContent = `
     },
     "darkTheme": {
       "colors": { "bg": "#1a1a1a" }
+    }
+  }
+}
+\`\`\`
+
+### Keybindings
+
+All keyboard shortcuts can be customized in settings:
+
+\`\`\`json
+{
+  "settings": {
+    "keybindings": {
+      "file:open": "CmdOrCtrl+O",
+      "file:quick-open": "CmdOrCtrl+P",
+      "file:save": "CmdOrCtrl+S",
+      "tab:close": "CmdOrCtrl+W",
+      "tab:prev": "Ctrl+,",
+      "tab:next": "Ctrl+.",
+      "view:toggle-edit": "T",
+      "help:show": "CmdOrCtrl+/"
     }
   }
 }
