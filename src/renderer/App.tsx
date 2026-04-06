@@ -7,10 +7,14 @@ import { MarkdownEditor } from './components/MarkdownEditor';
 import { Welcome } from './components/Welcome';
 import { QuickOpen } from './components/QuickOpen';
 import { useSettings } from './hooks/useSettings';
+import { mergeKeybindings } from '../shared/keybindings';
+import { matchAccelerator } from './matchAccelerator';
 
 export const App: FC = () => {
   const { theme } = useTheme();
   const settings = useSettings();
+  const kb = mergeKeybindings(settings.keybindings);
+  const isMac = navigator.userAgent.includes('Macintosh');
   const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -46,23 +50,23 @@ export const App: FC = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+O — Open file
-      if (e.metaKey && e.key === 'o') {
+      // Open file
+      if (matchAccelerator(e, kb['file:open'], isMac)) {
         e.preventDefault();
         void handleFileOpenDialog();
       }
-      // Cmd+P — Quick Open
-      if (e.metaKey && e.key === 'p') {
+      // Quick Open
+      if (matchAccelerator(e, kb['file:quick-open'], isMac)) {
         e.preventDefault();
         setIsQuickOpenOpen(true);
       }
-      // Cmd+S — Save
-      if (e.metaKey && e.key === 's') {
+      // Save
+      if (matchAccelerator(e, kb['file:save'], isMac)) {
         e.preventDefault();
         void handleSave();
       }
-      // t — Toggle edit mode (only when not in edit mode or when no input focused)
-      if (e.code === 'KeyT' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      // Toggle edit mode (only when no input focused)
+      if (matchAccelerator(e, kb['view:toggle-edit'], isMac)) {
         const target = e.target as HTMLElement;
         const isInputFocused = target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
@@ -76,22 +80,36 @@ export const App: FC = () => {
       if (e.key === 'Escape' && isEditMode) {
         setIsEditMode(false);
       }
-      // Cmd+1~9 — Switch tab
+      // Cmd+1~9 — Switch tab (not configurable)
       if (e.metaKey && e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         const index = parseInt(e.key, 10) - 1;
         const tab = tabs[index];
         if (tab) setActiveTab(tab.id);
       }
-      // Cmd+Shift+[ — Previous tab
+      // Cmd+Shift+[ — Previous tab (legacy)
       if (e.metaKey && e.shiftKey && e.key === '[') {
         e.preventDefault();
         const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
         const prevTab = tabs[currentIndex - 1];
         if (prevTab) setActiveTab(prevTab.id);
       }
-      // Cmd+Shift+] — Next tab
+      // Cmd+Shift+] — Next tab (legacy)
       if (e.metaKey && e.shiftKey && e.key === ']') {
+        e.preventDefault();
+        const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+        const nextTab = tabs[currentIndex + 1];
+        if (nextTab) setActiveTab(nextTab.id);
+      }
+      // Configurable tab:prev
+      if (matchAccelerator(e, kb['tab:prev'], isMac)) {
+        e.preventDefault();
+        const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+        const prevTab = tabs[currentIndex - 1];
+        if (prevTab) setActiveTab(prevTab.id);
+      }
+      // Configurable tab:next
+      if (matchAccelerator(e, kb['tab:next'], isMac)) {
         e.preventDefault();
         const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
         const nextTab = tabs[currentIndex + 1];
@@ -100,7 +118,7 @@ export const App: FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, isEditMode]);
+  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, isEditMode, kb, isMac]);
 
   // Drag & Drop
   useEffect(() => {
@@ -145,6 +163,29 @@ export const App: FC = () => {
     });
     return unsubscribe;
   }, [openTab]);
+
+  // Menu — tab navigation
+  useEffect(() => {
+    const unsubPrev = window.api.on('menu:prev-tab', () => {
+      const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+      const prevTab = tabs[currentIndex - 1];
+      if (prevTab) setActiveTab(prevTab.id);
+    });
+    const unsubNext = window.api.on('menu:next-tab', () => {
+      const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+      const nextTab = tabs[currentIndex + 1];
+      if (nextTab) setActiveTab(nextTab.id);
+    });
+    return () => { unsubPrev(); unsubNext(); };
+  }, [tabs, activeTabId, setActiveTab]);
+
+  // Menu — close tab
+  useEffect(() => {
+    const unsub = window.api.on('menu:close-tab', () => {
+      if (activeTab) closeTab(activeTab.id);
+    });
+    return unsub;
+  }, [activeTab, closeTab]);
 
   const isDark = theme.name === 'dark';
 
