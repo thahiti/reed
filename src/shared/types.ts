@@ -7,6 +7,8 @@ export type IpcChannels = {
   };
   'file:open-external': { args: readonly [url: string]; return: undefined };
   'file:write': { args: readonly [filePath: string, content: string]; return: undefined };
+  'file:watch': { args: readonly [filePath: string]; return: undefined };
+  'file:unwatch': { args: readonly [filePath: string]; return: undefined };
   'history:get': { args: readonly []; return: ReadonlyArray<HistoryEntry> };
   'history:add': { args: readonly [filePath: string]; return: undefined };
   'theme:get-system': { args: readonly []; return: 'light' | 'dark' };
