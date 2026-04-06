@@ -1,6 +1,6 @@
 import { test, expect, _electron as electron } from '@playwright/test';
 import { resolve } from 'path';
-import { writeFileSync, unlinkSync } from 'fs';
+import { writeFileSync, unlinkSync, mkdirSync, rmSync } from 'fs';
 
 const appPath = resolve(__dirname, '../../out/main/main.js');
 
@@ -69,6 +69,51 @@ test.describe('Reed E2E', () => {
       await app.close();
     } finally {
       unlinkSync(testFile);
+    }
+  });
+
+  test('should render image with md-image protocol for local paths', async () => {
+    const fixtureDir = resolve(__dirname, '../../test-fixture-img');
+    const imagesDir = resolve(fixtureDir, 'images');
+    mkdirSync(imagesDir, { recursive: true });
+
+    const testFile = resolve(fixtureDir, 'readme.md');
+    writeFileSync(testFile, '![diagram](images/test.png)\n\n![external](https://example.com/pic.png)');
+    // Create a minimal 1x1 PNG
+    const pngBuffer = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    writeFileSync(resolve(imagesDir, 'test.png'), pngBuffer);
+
+    try {
+      const app = await electron.launch({ args: [appPath] });
+      const page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile);
+
+      await expect(page.locator('.tab-item')).toBeVisible({ timeout: 5000 });
+
+      // Verify local image uses md-image protocol
+      const localImg = page.locator('.markdown-content img').first();
+      await expect(localImg).toBeVisible({ timeout: 5000 });
+      const localSrc = await localImg.getAttribute('src');
+      expect(localSrc).toContain('md-image://');
+      expect(localSrc).toContain('images/test.png');
+
+      // Verify external image URL is preserved
+      const externalImg = page.locator('.markdown-content img').nth(1);
+      await expect(externalImg).toBeVisible({ timeout: 5000 });
+      const externalSrc = await externalImg.getAttribute('src');
+      expect(externalSrc).toBe('https://example.com/pic.png');
+
+      await app.close();
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
     }
   });
 });
