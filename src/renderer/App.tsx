@@ -272,14 +272,13 @@ export const App: FC = () => {
 
   return (
     <div className="app">
-      {tabs.length > 0 && (
-        <TabBar
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onSelect={setActiveTab}
-          onClose={(id) => { void handleCloseTab(id); }}
-        />
-      )}
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelect={setActiveTab}
+        onClose={(id) => { void handleCloseTab(id); }}
+        onNewTab={handleNewTab}
+      />
       <main className="app-content">
         {activeTab ? (
           isEditMode ? (
