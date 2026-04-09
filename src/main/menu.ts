@@ -1,6 +1,7 @@
 import { app, Menu, shell, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
 import { getSettingsPath } from './ipc/settingsHandlers';
 import { mergeKeybindings } from '../shared/keybindings';
+import { bodyFonts, codeFonts, defaultBodyFontId, defaultCodeFontId } from '../shared/fonts';
 import type { AppSettings } from '../shared/types';
 
 const helpContent = `
@@ -99,6 +100,10 @@ All keyboard shortcuts can be customized in settings:
 }
 \`\`\`
 
+## Fonts
+- **View > Body Font** — Choose body text font (SUIT, Pretendard, Noto Serif KR, KoPub Batang)
+- **View > Code Font** — Choose code font (JetBrains Mono, D2Coding, Nanum Gothic Coding)
+
 ## Other
 - Drag & drop .md files onto the window to open
 - Double-click .md files in Finder to open with Reed
@@ -183,6 +188,25 @@ export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Me
           accelerator: kb['view:toggle-edit'],
           click: () => { mainWindow.webContents.send('menu:toggle-edit'); },
           registerAccelerator: false,
+        },
+        { type: 'separator' },
+        {
+          label: 'Body Font',
+          submenu: bodyFonts.map((font) => ({
+            label: font.name,
+            type: 'radio' as const,
+            checked: (settings.bodyFont ?? defaultBodyFontId) === font.id,
+            click: () => { mainWindow.webContents.send('menu:set-body-font', font.id); },
+          })),
+        },
+        {
+          label: 'Code Font',
+          submenu: codeFonts.map((font) => ({
+            label: font.name,
+            type: 'radio' as const,
+            checked: (settings.codeFont ?? defaultCodeFontId) === font.id,
+            click: () => { mainWindow.webContents.send('menu:set-code-font', font.id); },
+          })),
         },
         { type: 'separator' },
         {
