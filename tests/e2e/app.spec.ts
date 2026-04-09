@@ -256,4 +256,63 @@ test.describe('Reed E2E', () => {
       }
     }
   });
+
+  test('should change body font via menu event', async () => {
+    const app = await electron.launch({ args: [appPath] });
+    const page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
+
+    // Create a new tab to have content visible
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      win?.webContents.send('menu:new-file');
+    });
+    await expect(page.locator('.tab-item')).toHaveCount(1, { timeout: 5000 });
+
+    // Change body font to Pretendard
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      win?.webContents.send('menu:set-body-font', 'pretendard');
+    });
+
+    // Wait for CSS variable to reflect the new font
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement).getPropertyValue('--font-body').includes('Pretendard'),
+      { timeout: 5000 },
+    );
+
+    const fontFamily = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-body').trim(),
+    );
+    expect(fontFamily).toContain('Pretendard');
+
+    await app.close();
+  });
+
+  test('should change code font via menu event', async () => {
+    const app = await electron.launch({ args: [appPath] });
+    const page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
+
+    // Change code font to D2Coding
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      win?.webContents.send('menu:set-code-font', 'd2coding');
+    });
+
+    // Wait for CSS variable to reflect the new font
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement).getPropertyValue('--font-code').includes('D2Coding'),
+      { timeout: 5000 },
+    );
+
+    const fontFamily = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font-code').trim(),
+    );
+    expect(fontFamily).toContain('D2Coding');
+
+    await app.close();
+  });
 });
