@@ -11,7 +11,7 @@ import { mergeKeybindings } from '../shared/keybindings';
 import { matchAccelerator } from './matchAccelerator';
 
 export const App: FC = () => {
-  const { theme } = useTheme();
+  const { theme, updateSettings } = useTheme();
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
@@ -267,6 +267,34 @@ export const App: FC = () => {
     });
     return unsub;
   }, [handleSave]);
+
+  // Menu — set body font
+  useEffect(() => {
+    const unsub = window.api.on('menu:set-body-font', (fontId: unknown) => {
+      if (typeof fontId !== 'string') return;
+      void window.api.invoke('settings:get').then((current) => {
+        const updated = { ...current, bodyFont: fontId };
+        void window.api.invoke('settings:set', updated).then(() => {
+          updateSettings(updated);
+        });
+      });
+    });
+    return unsub;
+  }, [updateSettings]);
+
+  // Menu — set code font
+  useEffect(() => {
+    const unsub = window.api.on('menu:set-code-font', (fontId: unknown) => {
+      if (typeof fontId !== 'string') return;
+      void window.api.invoke('settings:get').then((current) => {
+        const updated = { ...current, codeFont: fontId };
+        void window.api.invoke('settings:set', updated).then(() => {
+          updateSettings(updated);
+        });
+      });
+    });
+    return unsub;
+  }, [updateSettings]);
 
   const isDark = theme.name === 'dark';
 
