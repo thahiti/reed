@@ -98,19 +98,18 @@
 
 .frontmatter-table table { width: 100%; border-collapse: collapse; }
 .frontmatter-table tr:not(:last-child) { border-bottom: 1px solid var(--color-table-border); }
-.frontmatter-table tr:nth-child(even) td { background-color: transparent; }
-
-.frontmatter-key {
+.frontmatter-table td {
   padding: 8px 14px;
+  background-color: var(--color-bg);
+}
+
+.frontmatter-table .frontmatter-key {
   color: var(--color-text-secondary);
   font-weight: 500;
-  background-color: var(--color-code-bg);
   width: 120px;
   vertical-align: top;
   white-space: nowrap;
 }
-
-.frontmatter-value { padding: 8px 14px; }
 
 .frontmatter-badge {
   display: inline-block;
