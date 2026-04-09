@@ -109,6 +109,24 @@ describe('useTabs', () => {
     expect(result.current.tabs[0]?.content).toBe('# Original');
   });
 
+  it('should force reload tab even when modified', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# Original');
+    });
+    const tabId = result.current.tabs[0]?.id;
+    if (!tabId) throw new Error('tab not found');
+    act(() => {
+      result.current.updateTabContent(tabId, '# User edit');
+    });
+    expect(result.current.tabs[0]?.modified).toBe(true);
+    act(() => {
+      result.current.forceReloadTab('/path/a.md', '# External change');
+    });
+    expect(result.current.tabs[0]?.content).toBe('# External change');
+    expect(result.current.tabs[0]?.modified).toBe(false);
+  });
+
   it('should return null activeTabId when all tabs closed', () => {
     const { result } = renderHook(() => useTabs());
     act(() => {
