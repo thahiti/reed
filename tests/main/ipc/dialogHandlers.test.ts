@@ -12,7 +12,7 @@ vi.mock('electron', () => {
 });
 
 import { dialog } from 'electron';
-import { showConfirmCloseDialog } from '../../../src/main/ipc/dialogHandlers';
+import { showConfirmCloseDialog, showConfirmReloadDialog } from '../../../src/main/ipc/dialogHandlers';
 
 describe('dialogHandlers', () => {
   beforeEach(() => {
@@ -47,6 +47,37 @@ describe('dialogHandlers', () => {
       });
       const result = await showConfirmCloseDialog('저장하지 않은 내용이 있습니다.');
       expect(result).toBe(2);
+    });
+  });
+
+  describe('showConfirmReloadDialog', () => {
+    it('should return true when user clicks reload', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const showMessageBoxMock = vi.mocked(dialog.showMessageBox);
+      showMessageBoxMock.mockResolvedValue({
+        response: 0,
+        checkboxChecked: false,
+      });
+      const result = await showConfirmReloadDialog('test.md');
+      expect(result).toBe(true);
+      expect(showMessageBoxMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          type: 'question',
+          buttons: ['다시 로드', '무시'],
+        }),
+      );
+    });
+
+    it('should return false when user clicks ignore', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const showMessageBoxMock = vi.mocked(dialog.showMessageBox);
+      showMessageBoxMock.mockResolvedValue({
+        response: 1,
+        checkboxChecked: false,
+      });
+      const result = await showConfirmReloadDialog('test.md');
+      expect(result).toBe(false);
     });
   });
 });
