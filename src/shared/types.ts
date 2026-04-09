@@ -25,7 +25,7 @@ export type HistoryEntry = {
 
 export type Tab = {
   readonly id: string;
-  readonly filePath: string;
+  readonly filePath: string | null;
   readonly fileName: string;
   readonly content: string;
   readonly modified: boolean;

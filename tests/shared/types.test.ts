@@ -20,6 +20,11 @@ describe('Shared Types', () => {
     expectTypeOf<Tab>().toHaveProperty('content');
   });
 
+  it('should allow Tab with null filePath', () => {
+    expectTypeOf<Tab['filePath']>().toEqualTypeOf<string | null>();
+    expectTypeOf<Tab>().toHaveProperty('filePath');
+  });
+
   it('TabState should have tabs and activeTabId', () => {
     expectTypeOf<TabState>().toHaveProperty('tabs');
     expectTypeOf<TabState>().toHaveProperty('activeTabId');
