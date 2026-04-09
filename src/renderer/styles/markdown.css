@@ -87,3 +87,37 @@
 
 .mermaid-diagram { display: flex; justify-content: center; margin-bottom: var(--spacing-paragraph); }
 .mermaid-diagram svg { max-width: 100%; }
+
+.frontmatter-table {
+  margin-bottom: var(--spacing-heading-margin-top);
+  border: 1px solid var(--color-table-border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.frontmatter-table table { width: 100%; border-collapse: collapse; }
+.frontmatter-table tr:not(:last-child) { border-bottom: 1px solid var(--color-table-border); }
+
+.frontmatter-key {
+  padding: 8px 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  background-color: var(--color-code-bg);
+  width: 120px;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.frontmatter-value { padding: 8px 14px; }
+
+.frontmatter-badge {
+  display: inline-block;
+  background-color: var(--color-selection);
+  color: var(--color-link);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-right: 4px;
+  margin-bottom: 2px;
+}
