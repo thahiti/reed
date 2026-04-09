@@ -36,9 +36,3 @@ body {
   border-radius: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .hljs {
-    background: var(--color-code-bg) !important;
-    color: var(--color-code-text) !important;
-  }
-}
