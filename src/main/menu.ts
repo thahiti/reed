@@ -9,6 +9,7 @@ const helpContent = `
 ## File
 | Shortcut | Action |
 |----------|--------|
+| ⌘N | New file |
 | ⌘O | Open file |
 | ⌘P | Quick Open (recent files) |
 | ⌘S | Save file |
@@ -133,6 +134,11 @@ export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Me
     {
       label: 'File',
       submenu: [
+        {
+          label: 'New',
+          accelerator: kb['file:new'],
+          click: () => { mainWindow.webContents.send('menu:new-file'); },
+        },
         {
           label: 'Open...',
           accelerator: kb['file:open'],
