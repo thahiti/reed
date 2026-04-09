@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { lightTheme } from '../themes/light';
 import { darkTheme } from '../themes/dark';
 import { applyTheme } from '../themes/applyTheme';
@@ -56,5 +56,9 @@ export const useTheme = () => {
     return unsubscribe;
   }, [settings]);
 
-  return { theme };
+  const updateSettings = useCallback((newSettings: AppSettings) => {
+    setSettings(newSettings);
+  }, []);
+
+  return { theme, updateSettings };
 };
