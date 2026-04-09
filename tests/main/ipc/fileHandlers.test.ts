@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('electron', () => ({
-  ipcMain: { handle: vi.fn() },
-  dialog: { showOpenDialog: vi.fn() },
-  shell: { openExternal: vi.fn() },
-  BrowserWindow: { getFocusedWindow: vi.fn(), getAllWindows: vi.fn(() => []) },
-}));
+vi.mock('electron', () => {
+  const mockBrowserWindow = vi.fn(() => ({}));
+  mockBrowserWindow.getFocusedWindow = vi.fn();
+  mockBrowserWindow.getAllWindows = vi.fn(() => []);
+  return {
+    ipcMain: { handle: vi.fn() },
+    dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn() },
+    shell: { openExternal: vi.fn() },
+    BrowserWindow: mockBrowserWindow,
+  };
+});
 
 vi.mock('node:fs/promises', () => ({
   default: { readFile: vi.fn() },
@@ -15,6 +20,7 @@ vi.mock('node:fs/promises', () => ({
 import { readFileContent, resolveRelativePath } from '../../../src/main/ipc/fileHandlers';
 
 import { readFile } from 'node:fs/promises';
+import { dialog } from 'electron';
 
 describe('fileHandlers', () => {
   beforeEach(() => {
@@ -48,6 +54,36 @@ describe('fileHandlers', () => {
       const result = resolveRelativePath('/docs/sub/readme.md', '../images/logo.png');
       expect(result).toContain('docs');
       expect(result).toContain('images/logo.png');
+    });
+  });
+
+  describe('showSaveDialogForMd', () => {
+    it('should return file path when user selects a file', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const showSaveDialogMock = vi.mocked(dialog.showSaveDialog);
+      showSaveDialogMock.mockImplementation(() =>
+        Promise.resolve({
+          canceled: false,
+          filePath: '/path/to/new-file.md',
+        }),
+      );
+      const { showSaveDialogForMd } = await import('../../../src/main/ipc/fileHandlers');
+      const result = await showSaveDialogForMd();
+      expect(result).toBe('/path/to/new-file.md');
+    });
+
+    it('should return null when user cancels', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const showSaveDialogMock = vi.mocked(dialog.showSaveDialog);
+      showSaveDialogMock.mockImplementation(() =>
+        Promise.resolve({
+          canceled: true,
+          filePath: undefined as unknown as string,
+        }),
+      );
+      const { showSaveDialogForMd } = await import('../../../src/main/ipc/fileHandlers');
+      const result = await showSaveDialogForMd();
+      expect(result).toBeNull();
     });
   });
 });

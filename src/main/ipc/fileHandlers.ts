@@ -22,6 +22,14 @@ export const resolveRelativePath = (basePath: string, relativePath: string): str
   return resolved;
 };
 
+export const showSaveDialogForMd = async (): Promise<string | null> => {
+  const focusedWindow = BrowserWindow.getFocusedWindow();
+  const result = await dialog.showSaveDialog(focusedWindow ?? new BrowserWindow(), {
+    filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
+  });
+  return result.canceled ? null : result.filePath;
+};
+
 export const registerFileHandlers = (): void => {
   ipcMain.handle('file:read', (_event, filePath: string) =>
     readFileContent(filePath),
@@ -35,6 +43,8 @@ export const registerFileHandlers = (): void => {
     });
     return result.canceled ? null : (result.filePaths[0] ?? null);
   });
+
+  ipcMain.handle('file:save-dialog', () => showSaveDialogForMd());
 
   ipcMain.handle(
     'file:resolve-path',
