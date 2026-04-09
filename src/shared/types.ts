@@ -1,6 +1,7 @@
 export type IpcChannels = {
   'file:read': { args: readonly [filePath: string]; return: string };
   'file:open-dialog': { args: readonly []; return: string | null };
+  'file:save-dialog': { args: readonly []; return: string | null };
   'file:resolve-path': {
     args: readonly [basePath: string, relativePath: string];
     return: string;
