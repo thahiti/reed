@@ -57,7 +57,26 @@ export const useTabs = () => {
     );
   }, []);
 
+  const createNewTab = useCallback(() => {
+    setTabs((prev) => {
+      const existing = prev.find((t) => t.filePath === null);
+      if (existing) {
+        setActiveTabId(existing.id);
+        return prev;
+      }
+      const newTab: Tab = { id: generateId(), filePath: null, fileName: 'Untitled', content: '', modified: false };
+      setActiveTabId(newTab.id);
+      return [...prev, newTab];
+    });
+  }, []);
+
+  const promoteTab = useCallback((tabId: string, filePath: string, fileName: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, filePath, fileName, modified: false } : t)),
+    );
+  }, []);
+
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
-  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab };
+  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab, createNewTab, promoteTab };
 };
