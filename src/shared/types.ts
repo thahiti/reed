@@ -11,6 +11,7 @@ export type IpcChannels = {
   'file:watch': { args: readonly [filePath: string]; return: undefined };
   'file:unwatch': { args: readonly [filePath: string]; return: undefined };
   'dialog:confirm-close': { args: readonly [message: string]; return: number };
+  'dialog:confirm-reload': { args: readonly [fileName: string]; return: boolean };
   'history:get': { args: readonly []; return: ReadonlyArray<HistoryEntry> };
   'history:add': { args: readonly [filePath: string]; return: undefined };
   'theme:get-system': { args: readonly []; return: 'light' | 'dark' };
