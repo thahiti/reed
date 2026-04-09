@@ -1,6 +1,6 @@
 import './styles/fonts.css';
 import './styles/global.css';
-import 'highlight.js/styles/github.css';
+import './styles/highlight.css';
 import './styles/app.css';
 import './styles/markdown.css';
 import './styles/tabs.css';
