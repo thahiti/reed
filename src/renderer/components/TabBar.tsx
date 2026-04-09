@@ -6,9 +6,10 @@ type TabBarProps = {
   readonly activeTabId: string | null;
   readonly onSelect: (id: string) => void;
   readonly onClose: (id: string) => void;
+  readonly onNewTab: () => void;
 };
 
-export const TabBar: FC<TabBarProps> = ({ tabs, activeTabId, onSelect, onClose }) => (
+export const TabBar: FC<TabBarProps> = ({ tabs, activeTabId, onSelect, onClose, onNewTab }) => (
   <div className="tab-bar">
     {tabs.map((tab) => (
       <div
@@ -28,5 +29,6 @@ export const TabBar: FC<TabBarProps> = ({ tabs, activeTabId, onSelect, onClose }
         </button>
       </div>
     ))}
+    <button className="tab-new" onClick={onNewTab}>+</button>
   </div>
 );

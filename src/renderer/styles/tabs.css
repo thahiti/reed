@@ -35,3 +35,15 @@
 }
 
 .tab-close:hover { background-color: var(--color-divider); color: var(--color-text); }
+
+.tab-new {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 12px;
+  -webkit-app-region: no-drag;
+}
+
+.tab-new:hover { color: var(--color-text); }
