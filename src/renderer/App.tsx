@@ -15,7 +15,7 @@ export const App: FC = () => {
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab } = useTabs();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, createNewTab, promoteTab } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const topLineRef = useRef(1);
@@ -36,11 +36,32 @@ export const App: FC = () => {
     }
   }, [handleOpenFile]);
 
+  const handleNewTab = useCallback(() => {
+    createNewTab();
+    setIsEditMode(true);
+  }, [createNewTab]);
+
+  const handleSaveAs = useCallback(async () => {
+    if (!activeTab) return;
+    const filePath = await window.api.invoke('file:save-dialog');
+    if (!filePath) return;
+    await window.api.invoke('file:write', filePath, activeTab.content);
+    const parts = filePath.split('/');
+    const fileName = parts[parts.length - 1] ?? filePath;
+    promoteTab(activeTab.id, filePath, fileName);
+    void window.api.invoke('file:watch', filePath);
+    await window.api.invoke('history:add', filePath);
+  }, [activeTab, promoteTab]);
+
   const handleSave = useCallback(async () => {
     if (!activeTab) return;
+    if (activeTab.filePath === null) {
+      await handleSaveAs();
+      return;
+    }
     await window.api.invoke('file:write', activeTab.filePath, activeTab.content);
     markTabSaved(activeTab.id);
-  }, [activeTab, markTabSaved]);
+  }, [activeTab, markTabSaved, handleSaveAs]);
 
   const handleEditorChange = useCallback((content: string) => {
     if (activeTab) {
@@ -48,20 +69,41 @@ export const App: FC = () => {
     }
   }, [activeTab, updateTabContent]);
 
-  const handleCloseTab = useCallback((tabId: string) => {
+  const handleCloseTab = useCallback(async (tabId: string) => {
     const tab = tabs.find((t) => t.id === tabId);
-    if (tab) {
+    if (!tab) return;
+
+    // Untitled tab with content — confirm close
+    if (tab.filePath === null && tab.content !== '') {
+      const response = await window.api.invoke('dialog:confirm-close', '저장하지 않은 내용이 있습니다. 저장하시겠습니까?');
+      if (response === 2) return; // Cancel
+      if (response === 0) { // Save
+        const savePath = await window.api.invoke('file:save-dialog');
+        if (!savePath) return;
+        await window.api.invoke('file:write', savePath, tab.content);
+      }
+      // response === 1: Don't save — fall through to close
+    }
+
+    // Unwatch file if it's the last tab with that filePath
+    if (tab.filePath !== null) {
       const otherWithSameFile = tabs.filter((t) => t.id !== tabId && t.filePath === tab.filePath);
       if (otherWithSameFile.length === 0) {
         void window.api.invoke('file:unwatch', tab.filePath);
       }
     }
+
     closeTab(tabId);
   }, [tabs, closeTab]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // New tab
+      if (matchAccelerator(e, kb['file:new'], isMac)) {
+        e.preventDefault();
+        handleNewTab();
+      }
       // Open file
       if (matchAccelerator(e, kb['file:open'], isMac)) {
         e.preventDefault();
@@ -130,7 +172,7 @@ export const App: FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, isEditMode, kb, isMac]);
+  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, handleNewTab, isEditMode, kb, isMac]);
 
   // Drag & Drop
   useEffect(() => {
@@ -205,10 +247,26 @@ export const App: FC = () => {
   // Menu — close tab
   useEffect(() => {
     const unsub = window.api.on('menu:close-tab', () => {
-      if (activeTab) handleCloseTab(activeTab.id);
+      if (activeTab) void handleCloseTab(activeTab.id);
     });
     return unsub;
   }, [activeTab, handleCloseTab]);
+
+  // Menu — new file
+  useEffect(() => {
+    const unsub = window.api.on('menu:new-file', () => {
+      handleNewTab();
+    });
+    return unsub;
+  }, [handleNewTab]);
+
+  // Menu — save
+  useEffect(() => {
+    const unsub = window.api.on('menu:save', () => {
+      void handleSave();
+    });
+    return unsub;
+  }, [handleSave]);
 
   const isDark = theme.name === 'dark';
 
@@ -219,7 +277,7 @@ export const App: FC = () => {
           tabs={tabs}
           activeTabId={activeTabId}
           onSelect={setActiveTab}
-          onClose={handleCloseTab}
+          onClose={(id) => { void handleCloseTab(id); }}
         />
       )}
       <main className="app-content">
@@ -236,7 +294,7 @@ export const App: FC = () => {
           ) : (
             <MarkdownView
               content={activeTab.content}
-              filePath={activeTab.filePath}
+              filePath={activeTab.filePath ?? undefined}
               initialLine={topLineRef.current}
               scrollSettings={settings.scroll}
               onTopLineChange={(line) => { topLineRef.current = line; }}
