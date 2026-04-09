@@ -20,11 +20,12 @@ export const getSettings = (): AppSettings => ({
   ...store.get('settings', defaultSettings),
 });
 
-export const registerSettingsHandlers = (): void => {
+export const registerSettingsHandlers = (onSettingsChange?: () => void): void => {
   ipcMain.handle('settings:get', () => getSettings());
 
   ipcMain.handle('settings:set', (_event, settings: AppSettings) => {
     store.set('settings', settings);
+    onSettingsChange?.();
   });
 
   ipcMain.handle('settings:open-file', () => {

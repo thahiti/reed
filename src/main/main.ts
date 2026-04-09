@@ -38,10 +38,18 @@ void app.whenReady().then(() => {
   registerFileHandlers();
   registerThemeHandlers();
   registerHistoryHandlers();
-  registerSettingsHandlers();
   registerDialogHandlers();
   const fileWatcher = registerFileWatchHandlers();
   const mainWindow = createWindow();
+
+  const rebuildMenu = (): void => {
+    const updatedSettings = getSettings();
+    const menu = createMenu(mainWindow, updatedSettings);
+    Menu.setApplicationMenu(menu);
+  };
+
+  registerSettingsHandlers(rebuildMenu);
+
   const settings = getSettings();
   const menu = createMenu(mainWindow, settings);
   Menu.setApplicationMenu(menu);
