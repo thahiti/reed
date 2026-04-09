@@ -4,6 +4,7 @@ import { darkTheme } from '../themes/dark';
 import { applyTheme } from '../themes/applyTheme';
 import type { Theme } from '../themes/types';
 import type { AppSettings, ThemeOverrides } from '../../shared/types';
+import { getBodyFontFamily, getCodeFontFamily, defaultBodyFontId, defaultCodeFontId } from '../../shared/fonts';
 
 const themeMap = { light: lightTheme, dark: darkTheme } as const;
 
@@ -13,6 +14,15 @@ const mergeTheme = (base: Theme, overrides?: ThemeOverrides): Theme => {
     ...base,
     fonts: { ...base.fonts, ...overrides.fonts },
     colors: { ...base.colors, ...overrides.colors },
+  };
+};
+
+const applyFontSettings = (theme: Theme, settings: AppSettings | null): Theme => {
+  const bodyFamily = getBodyFontFamily(settings?.bodyFont ?? defaultBodyFontId);
+  const codeFamily = getCodeFontFamily(settings?.codeFont ?? defaultCodeFontId);
+  return {
+    ...theme,
+    fonts: { ...theme.fonts, body: bodyFamily, code: codeFamily },
   };
 };
 
@@ -28,8 +38,9 @@ export const useTheme = () => {
   useEffect(() => {
     const applyMode = (mode: 'light' | 'dark') => {
       const base = themeMap[mode];
+      const withFonts = applyFontSettings(base, settings);
       const overrides = mode === 'light' ? settings?.lightTheme : settings?.darkTheme;
-      const merged = mergeTheme(base, overrides);
+      const merged = mergeTheme(withFonts, overrides);
       setTheme(merged);
       applyTheme(merged);
     };
