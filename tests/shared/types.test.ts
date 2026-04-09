@@ -1,5 +1,5 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { IpcChannels, HistoryEntry, Tab, TabState } from '../src/shared/types';
+import type { IpcChannels, HistoryEntry, Tab, TabState, AppSettings } from '../src/shared/types';
 
 describe('Shared Types', () => {
   it('IpcChannels should have file:read channel', () => {
@@ -28,5 +28,17 @@ describe('Shared Types', () => {
   it('TabState should have tabs and activeTabId', () => {
     expectTypeOf<TabState>().toHaveProperty('tabs');
     expectTypeOf<TabState>().toHaveProperty('activeTabId');
+  });
+
+  it('should allow AppSettings with bodyFont and codeFont', () => {
+    expectTypeOf<AppSettings>().toHaveProperty('bodyFont');
+    expectTypeOf<AppSettings>().toHaveProperty('codeFont');
+    expectTypeOf<AppSettings['bodyFont']>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<AppSettings['codeFont']>().toEqualTypeOf<string | undefined>();
+  });
+
+  it('should allow AppSettings without bodyFont and codeFont', () => {
+    expectTypeOf<AppSettings['bodyFont']>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<AppSettings['codeFont']>().toEqualTypeOf<string | undefined>();
   });
 });
