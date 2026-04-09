@@ -3,7 +3,7 @@ import type { Theme } from './types';
 export const darkTheme: Theme = {
   name: 'dark',
   fonts: {
-    body: 'Inter, Pretendard, -apple-system, system-ui, sans-serif',
+    body: "'SUIT Variable', sans-serif",
     code: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
     bodySize: '16px',
     codeSize: '14px',
