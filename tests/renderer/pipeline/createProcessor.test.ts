@@ -56,4 +56,29 @@ describe('createProcessor', () => {
     expect(rendered).toContain('strong');
     expect(rendered).toContain('정보 단위(Chunk)');
   });
+
+  it('should render frontmatter as FrontmatterTable component', () => {
+    const md = '---\ntitle: Hello\nauthor: Randy\n---\n\n# Content';
+    const result = processMarkdown(md);
+    const rendered = JSON.stringify(result);
+    expect(rendered).toContain('frontmatter-table');
+    expect(rendered).toContain('Hello');
+    expect(rendered).toContain('Randy');
+  });
+
+  it('should render frontmatter array values', () => {
+    const md = '---\ntags:\n  - electron\n  - react\n---\n\n# Content';
+    const result = processMarkdown(md);
+    const rendered = JSON.stringify(result);
+    expect(rendered).toContain('frontmatter-badge');
+    expect(rendered).toContain('electron');
+    expect(rendered).toContain('react');
+  });
+
+  it('should handle markdown without frontmatter', () => {
+    const md = '# Just a heading';
+    const result = processMarkdown(md);
+    const rendered = JSON.stringify(result);
+    expect(rendered).not.toContain('frontmatter-table');
+  });
 });

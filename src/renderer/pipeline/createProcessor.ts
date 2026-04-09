@@ -1,5 +1,6 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
+import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
@@ -23,8 +24,26 @@ import { MermaidDiagram } from '../components/markdown/MermaidDiagram';
 import { rehypeSourceLines } from './rehypeSourceLines';
 import { rehypeImageResolve } from './rehypeImageResolve';
 import { remarkStrongFallback } from './remarkStrongFallback';
+import { remarkFrontmatterTable } from './remarkFrontmatterTable';
+import { rehypeFrontmatterTable } from './rehypeFrontmatterTable';
 
 type AnyProps = Record<string, unknown>;
+
+type YamlNode = {
+  type: 'yaml';
+  value?: string;
+  data?: { hName?: string; hProperties?: Record<string, unknown> };
+};
+
+const yamlToHast = (_state: unknown, node: YamlNode) => {
+  if (!node.data?.hName) return undefined;
+  return {
+    type: 'element' as const,
+    tagName: node.data.hName,
+    properties: node.data.hProperties ?? {},
+    children: [] as [],
+  };
+};
 
 type ChildElement = { props?: { className?: string; children?: string } };
 
@@ -48,10 +67,13 @@ const getMermaidChart = (props: AnyProps): string => {
 const buildProcessor = (basePath: string) => {
   const processor = unified();
   processor.use(remarkParse);
+  processor.use(remarkFrontmatter);
+  processor.use(remarkFrontmatterTable);
   processor.use(remarkGfm);
   processor.use(remarkMath);
   processor.use(remarkStrongFallback);
-  processor.use(remarkRehype);
+  processor.use(remarkRehype, { handlers: { yaml: yamlToHast } });
+  processor.use(rehypeFrontmatterTable);
   processor.use(rehypeKatex);
   processor.use(rehypeSourceLines);
   if (basePath) {
