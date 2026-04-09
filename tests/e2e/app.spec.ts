@@ -290,6 +290,40 @@ test.describe('Reed E2E', () => {
     await app.close();
   });
 
+  test('should render frontmatter as table card', async () => {
+    const testFile = resolve(__dirname, '../../test-frontmatter.md');
+    writeFileSync(testFile, '---\ntitle: Test Document\ntags:\n  - alpha\n  - beta\n---\n\n# Hello');
+
+    try {
+      const app = await electron.launch({ args: [appPath] });
+      const page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile);
+
+      await expect(page.locator('.tab-item')).toBeVisible({ timeout: 5000 });
+
+      // Frontmatter table should be rendered
+      await expect(page.locator('.frontmatter-table')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.frontmatter-key', { hasText: 'title' })).toBeVisible();
+      await expect(page.locator('.frontmatter-value', { hasText: 'Test Document' })).toBeVisible();
+
+      // Tags should be rendered as badges
+      await expect(page.locator('.frontmatter-badge', { hasText: 'alpha' })).toBeVisible();
+      await expect(page.locator('.frontmatter-badge', { hasText: 'beta' })).toBeVisible();
+
+      // Regular content should also render
+      await expect(page.locator('.markdown-content h1')).toHaveText('Hello');
+
+      await app.close();
+    } finally {
+      try { unlinkSync(testFile); } catch { /* */ }
+    }
+  });
+
   test('should change code font via menu event', async () => {
     const app = await electron.launch({ args: [appPath] });
     const page = await app.firstWindow();
