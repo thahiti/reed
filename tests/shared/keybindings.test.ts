@@ -21,4 +21,9 @@ describe('keybindings', () => {
     const result = mergeKeybindings({});
     expect(result).toEqual(defaultKeybindings);
   });
+
+  it('should include file:new in default keybindings', () => {
+    const result = mergeKeybindings(undefined);
+    expect(result['file:new']).toBe('CmdOrCtrl+N');
+  });
 });

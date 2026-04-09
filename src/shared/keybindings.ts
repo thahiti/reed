@@ -1,4 +1,5 @@
 export const keybindingActions = [
+  'file:new',
   'file:open',
   'file:quick-open',
   'file:save',
@@ -12,6 +13,7 @@ export const keybindingActions = [
 export type KeybindingAction = (typeof keybindingActions)[number];
 
 export const defaultKeybindings: Readonly<Record<KeybindingAction, string>> = {
+  'file:new': 'CmdOrCtrl+N',
   'file:open': 'CmdOrCtrl+O',
   'file:quick-open': 'CmdOrCtrl+P',
   'file:save': 'CmdOrCtrl+S',
