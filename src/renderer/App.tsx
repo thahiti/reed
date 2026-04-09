@@ -15,7 +15,7 @@ export const App: FC = () => {
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, createNewTab, promoteTab } = useTabs();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const topLineRef = useRef(1);
@@ -211,12 +211,24 @@ export const App: FC = () => {
   useEffect(() => {
     const unsubscribe = window.api.on('file:changed', (filePath: unknown) => {
       if (typeof filePath !== 'string') return;
-      void window.api.invoke('file:read', filePath).then((content) => {
-        reloadTab(filePath, content);
-      });
+      const tab = tabs.find((t) => t.filePath === filePath);
+      if (!tab) return;
+
+      if (tab.modified) {
+        void window.api.invoke('dialog:confirm-reload', tab.fileName).then((reload) => {
+          if (!reload) return;
+          void window.api.invoke('file:read', filePath).then((content) => {
+            forceReloadTab(filePath, content);
+          });
+        });
+      } else {
+        void window.api.invoke('file:read', filePath).then((content) => {
+          reloadTab(filePath, content);
+        });
+      }
     });
     return unsubscribe;
-  }, [reloadTab]);
+  }, [tabs, reloadTab, forceReloadTab]);
 
   // Help — render markdown help as a tab
   useEffect(() => {
