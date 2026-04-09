@@ -5,6 +5,7 @@ import { registerHistoryHandlers } from './ipc/historyHandlers';
 import { registerThemeHandlers } from './ipc/themeHandlers';
 import { getSettings, registerSettingsHandlers } from './ipc/settingsHandlers';
 import { registerFileWatchHandlers } from './ipc/fileWatchHandlers';
+import { registerDialogHandlers } from './ipc/dialogHandlers';
 import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
 import { createOpenFileQueue } from './openFileQueue';
@@ -38,6 +39,7 @@ void app.whenReady().then(() => {
   registerThemeHandlers();
   registerHistoryHandlers();
   registerSettingsHandlers();
+  registerDialogHandlers();
   const fileWatcher = registerFileWatchHandlers();
   const mainWindow = createWindow();
   const settings = getSettings();
