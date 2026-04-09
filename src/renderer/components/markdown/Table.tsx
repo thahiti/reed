@@ -23,12 +23,13 @@ export const TableRow: FC<PropsWithChildren> = ({ children }) => (
 type TableCellProps = PropsWithChildren<{
   readonly isHeader?: boolean;
   readonly align?: 'left' | 'center' | 'right';
+  readonly className?: string;
 }>;
 
-export const TableCell: FC<TableCellProps> = ({ isHeader, align, children }) => {
+export const TableCell: FC<TableCellProps> = ({ isHeader, align, className, children }) => {
   const Tag = isHeader ? 'th' : 'td';
   return (
-    <Tag className="table-cell" style={align ? { textAlign: align } : undefined}>
+    <Tag className={className ?? 'table-cell'} style={align ? { textAlign: align } : undefined}>
       {children}
     </Tag>
   );
