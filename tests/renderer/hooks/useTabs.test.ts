@@ -122,4 +122,54 @@ describe('useTabs', () => {
     expect(result.current.activeTabId).toBeNull();
     expect(result.current.tabs).toHaveLength(0);
   });
+
+  it('should create an untitled tab with null filePath', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.createNewTab();
+    });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0]?.filePath).toBeNull();
+    expect(result.current.tabs[0]?.fileName).toBe('Untitled');
+    expect(result.current.tabs[0]?.content).toBe('');
+    expect(result.current.tabs[0]?.modified).toBe(false);
+    expect(result.current.activeTabId).toBe(result.current.tabs[0]?.id);
+  });
+
+  it('should focus existing untitled tab instead of creating duplicate', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.createNewTab();
+    });
+    const firstId = result.current.tabs[0]?.id;
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# A');
+    });
+    // activeTab is now a.md
+    expect(result.current.activeTabId).not.toBe(firstId);
+    act(() => {
+      result.current.createNewTab();
+    });
+    // should focus existing untitled tab, not create new
+    expect(result.current.tabs.filter((t) => t.filePath === null)).toHaveLength(1);
+    expect(result.current.activeTabId).toBe(firstId);
+  });
+
+  it('should promote untitled tab to file tab', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.createNewTab();
+    });
+    const tabId = result.current.tabs[0]?.id;
+    if (!tabId) throw new Error('tab not found');
+    act(() => {
+      result.current.updateTabContent(tabId, '# New content');
+    });
+    act(() => {
+      result.current.promoteTab(tabId, '/path/new-file.md', 'new-file.md');
+    });
+    expect(result.current.tabs[0]?.filePath).toBe('/path/new-file.md');
+    expect(result.current.tabs[0]?.fileName).toBe('new-file.md');
+    expect(result.current.tabs[0]?.modified).toBe(false);
+  });
 });
