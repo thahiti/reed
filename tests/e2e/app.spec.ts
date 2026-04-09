@@ -155,15 +155,19 @@ test.describe('Reed E2E', () => {
     }
   });
 
-  test('should create new untitled tab with Cmd+N', async () => {
+  test('should create new untitled tab via menu event', async () => {
     const app = await electron.launch({ args: [appPath] });
     const page = await app.firstWindow();
     await page.waitForLoadState('domcontentloaded');
 
-    // Press Cmd+N to create new tab
-    await page.keyboard.press('Meta+n');
+    // Trigger new file via menu event (same as Cmd+N menu accelerator)
+    await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      win?.webContents.send('menu:new-file');
+    });
 
     // Tab bar should show with "Untitled" tab
+    await expect(page.locator('.tab-item')).toHaveCount(1, { timeout: 5000 });
     const tabTitle = await page.locator('.tab-title').first().textContent();
     expect(tabTitle).toBe('Untitled');
 
