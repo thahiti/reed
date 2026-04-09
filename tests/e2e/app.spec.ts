@@ -32,14 +32,16 @@ test.describe('Reed E2E', () => {
     await app.close();
   });
 
-  test('should show no tabs initially', async () => {
+  test('should show tab bar with no tabs initially', async () => {
     const app = await electron.launch({ args: [appPath] });
     const page = await app.firstWindow();
 
     await page.waitForLoadState('domcontentloaded');
 
-    const tabBar = await page.locator('.tab-bar').count();
-    expect(tabBar).toBe(0);
+    // Tab bar is always rendered (even with no tabs open)
+    await expect(page.locator('.tab-bar')).toBeVisible();
+    const tabItems = await page.locator('.tab-item').count();
+    expect(tabItems).toBe(0);
 
     await app.close();
   });
@@ -151,6 +153,46 @@ test.describe('Reed E2E', () => {
         /* file may not exist */
       }
     }
+  });
+
+  test('should create new untitled tab with Cmd+N', async () => {
+    const app = await electron.launch({ args: [appPath] });
+    const page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
+
+    // Press Cmd+N to create new tab
+    await page.keyboard.press('Meta+n');
+
+    // Tab bar should show with "Untitled" tab
+    const tabTitle = await page.locator('.tab-title').first().textContent();
+    expect(tabTitle).toBe('Untitled');
+
+    // Should be in edit mode (CodeMirror editor visible)
+    await expect(page.locator('.cm-editor')).toBeVisible();
+
+    // Mode indicator should show "Edit"
+    const modeText = await page.locator('.mode-indicator').textContent();
+    expect(modeText).toContain('Edit');
+
+    await app.close();
+  });
+
+  test('should show + button in tab bar', async () => {
+    const app = await electron.launch({ args: [appPath] });
+    const page = await app.firstWindow();
+    await page.waitForLoadState('domcontentloaded');
+
+    // "+" button should be visible
+    await expect(page.locator('.tab-new')).toBeVisible();
+
+    // Click it
+    await page.locator('.tab-new').click();
+
+    // Should create untitled tab
+    const tabTitle = await page.locator('.tab-title').first().textContent();
+    expect(tabTitle).toBe('Untitled');
+
+    await app.close();
   });
 
   test('should navigate tabs with menu events', async () => {
