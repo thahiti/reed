@@ -7,6 +7,7 @@ import { MarkdownEditor } from './components/MarkdownEditor';
 import { Welcome } from './components/Welcome';
 import { QuickOpen } from './components/QuickOpen';
 import { useSettings } from './hooks/useSettings';
+import { useMarkdown } from './hooks/useMarkdown';
 import { mergeKeybindings } from '../shared/keybindings';
 import { matchAccelerator } from './matchAccelerator';
 
@@ -19,6 +20,10 @@ export const App: FC = () => {
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const topLineRef = useRef(1);
+  const { rendered: renderedMarkdown } = useMarkdown(
+    activeTab?.content ?? '',
+    activeTab?.filePath ?? '',
+  );
 
   const handleOpenFile = useCallback(async (filePath: string) => {
     const content = await window.api.invoke('file:read', filePath);
@@ -332,8 +337,7 @@ export const App: FC = () => {
             />
           ) : (
             <MarkdownView
-              content={activeTab.content}
-              filePath={activeTab.filePath ?? undefined}
+              rendered={renderedMarkdown}
               initialLine={topLineRef.current}
               scrollSettings={settings.scroll}
               onTopLineChange={(line) => { topLineRef.current = line; }}
