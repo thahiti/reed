@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useRef, useState } from 'react';
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from './hooks/useTheme';
 import { useTabs } from './hooks/useTabs';
 import { TabBar } from './components/TabBar';
@@ -8,6 +8,9 @@ import { Welcome } from './components/Welcome';
 import { QuickOpen } from './components/QuickOpen';
 import { useSettings } from './hooks/useSettings';
 import { useMarkdown } from './hooks/useMarkdown';
+import { useActiveHeading } from './hooks/useActiveHeading';
+import { TocOverlay } from './components/TocOverlay';
+import { defaultTocSettings } from '../shared/types/toc';
 import { mergeKeybindings } from '../shared/keybindings';
 import { matchAccelerator } from './matchAccelerator';
 
@@ -19,11 +22,26 @@ export const App: FC = () => {
   const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [tocVisible, setTocVisible] = useState(false);
   const topLineRef = useRef(1);
-  const { rendered: renderedMarkdown } = useMarkdown(
+  const tocInitializedRef = useRef(false);
+  const { rendered: renderedMarkdown, headings: markdownHeadings } = useMarkdown(
     activeTab?.content ?? '',
     activeTab?.filePath ?? '',
   );
+  const tocConfig = useMemo(
+    () => ({ ...defaultTocSettings, ...(settings.toc ?? {}) }),
+    [settings.toc],
+  );
+  const filteredHeadings = useMemo(
+    () =>
+      markdownHeadings.filter(
+        (h) => h.level >= tocConfig.minLevel && h.level <= tocConfig.maxLevel,
+      ),
+    [markdownHeadings, tocConfig.minLevel, tocConfig.maxLevel],
+  );
+  const headingIds = useMemo(() => filteredHeadings.map((h) => h.id), [filteredHeadings]);
+  const activeHeadingId = useActiveHeading(headingIds);
 
   const handleOpenFile = useCallback(async (filePath: string) => {
     const content = await window.api.invoke('file:read', filePath);
@@ -133,6 +151,17 @@ export const App: FC = () => {
         if (!isInputFocused) {
           e.preventDefault();
           setIsEditMode((prev) => !prev);
+        }
+      }
+      // Toggle TOC overlay (read mode only, no input focused)
+      if (matchAccelerator(e, kb['view:toggle-toc'], isMac)) {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.classList.contains('cm-content');
+        if (!isInputFocused && !isEditMode) {
+          e.preventDefault();
+          setTocVisible((prev) => !prev);
         }
       }
       // Escape — Exit edit mode
@@ -313,6 +342,28 @@ export const App: FC = () => {
     return unsub;
   }, [updateSettings]);
 
+  // Menu — toggle TOC (ignored in edit mode)
+  useEffect(() => {
+    const unsub = window.api.on('menu:toggle-toc', () => {
+      if (!isEditMode) setTocVisible((prev) => !prev);
+    });
+    return unsub;
+  }, [isEditMode]);
+
+  // Initialize TOC visibility from settings (one-shot after first load)
+  useEffect(() => {
+    if (tocInitializedRef.current) return;
+    if (settings.toc !== undefined) {
+      tocInitializedRef.current = true;
+      setTocVisible(Boolean(settings.toc.visible));
+    }
+  }, [settings.toc]);
+
+  const handleTocItemClick = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const isDark = theme.name === 'dark';
 
   return (
@@ -345,6 +396,14 @@ export const App: FC = () => {
           )
         ) : (
           <Welcome />
+        )}
+        {activeTab && !isEditMode && tocVisible && (
+          <TocOverlay
+            headings={filteredHeadings}
+            activeId={activeHeadingId}
+            position={tocConfig.position}
+            onItemClick={handleTocItemClick}
+          />
         )}
       </main>
       {activeTab && (
