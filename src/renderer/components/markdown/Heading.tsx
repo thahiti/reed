@@ -1,4 +1,4 @@
-import type { FC, HTMLAttributes, PropsWithChildren, ReactNode } from 'react';
+import { isValidElement, type FC, type HTMLAttributes, type PropsWithChildren, type ReactNode } from 'react';
 import { toAnchorId } from '../../pipeline/anchorId';
 
 type HeadingProps = PropsWithChildren<
@@ -7,20 +7,15 @@ type HeadingProps = PropsWithChildren<
   }
 >;
 
-const getChildren = (node: object): ReactNode => {
-  if (!('props' in node)) return undefined;
-  const { props } = node;
-  if (props === null || typeof props !== 'object') return undefined;
-  if (!('children' in props)) return undefined;
-  return props.children as ReactNode;
-};
-
+// React's element props type is `{}`, so narrowing `children` to ReactNode
+// requires one unavoidable cast after isValidElement.
 const extractText = (node: ReactNode): string => {
   if (typeof node === 'string') return node;
   if (typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(extractText).join('');
-  if (node !== null && typeof node === 'object') {
-    return extractText(getChildren(node));
+  if (isValidElement(node)) {
+    const children = (node.props as { children?: ReactNode }).children;
+    return extractText(children);
   }
   return '';
 };

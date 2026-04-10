@@ -21,4 +21,30 @@ describe('Heading', () => {
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveAttribute('id', 'hello-world');
   });
+
+  it('should extract text from inline code children', () => {
+    render(
+      <Heading level={2}>
+        <code>foo</code> bar
+      </Heading>,
+    );
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading).toHaveAttribute('id', 'foo-bar');
+  });
+
+  it('should extract text from emphasis elements', () => {
+    render(
+      <Heading level={2}>
+        <strong>Bold</strong> and <em>italic</em>
+      </Heading>,
+    );
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading).toHaveAttribute('id', 'bold-and-italic');
+  });
+
+  it('should extract text from a nested array of children', () => {
+    render(<Heading level={3}>{['Hello ', <code key="c">world</code>]}</Heading>);
+    const heading = screen.getByRole('heading', { level: 3 });
+    expect(heading).toHaveAttribute('id', 'hello-world');
+  });
 });
