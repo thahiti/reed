@@ -94,6 +94,7 @@ All keyboard shortcuts can be customized in settings:
       "tab:prev": "Ctrl+,",
       "tab:next": "Ctrl+.",
       "view:toggle-edit": "T",
+      "view:toggle-toc": "O",
       "help:show": "CmdOrCtrl+/"
     }
   }
@@ -187,6 +188,12 @@ export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Me
           label: 'Toggle Edit Mode',
           accelerator: kb['view:toggle-edit'],
           click: () => { mainWindow.webContents.send('menu:toggle-edit'); },
+          registerAccelerator: false,
+        },
+        {
+          label: 'Toggle Outline',
+          accelerator: kb['view:toggle-toc'],
+          click: () => { mainWindow.webContents.send('menu:toggle-toc'); },
           registerAccelerator: false,
         },
         { type: 'separator' },
