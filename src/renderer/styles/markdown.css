@@ -2,6 +2,17 @@
   overflow-y: auto;
   height: 100%;
   padding: var(--spacing-content-padding);
+  transition: padding 180ms ease;
+}
+
+/* When TOC overlay is visible, reserve space on that side so the content
+   re-centers within the remaining width. 260px = 220 overlay + 20 gap + 20 right. */
+.app-content.toc-active-right .markdown-view {
+  padding-right: 260px;
+}
+
+.app-content.toc-active-left .markdown-view {
+  padding-left: 260px;
 }
 
 .markdown-content {

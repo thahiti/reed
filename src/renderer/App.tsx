@@ -371,6 +371,10 @@ export const App: FC = () => {
   }, []);
 
   const isDark = theme.name === 'dark';
+  const tocActive = Boolean(activeTab) && !isEditMode && tocVisible && filteredHeadings.length > 0;
+  const mainClassName = tocActive
+    ? `app-content toc-active-${tocConfig.position}`
+    : 'app-content';
 
   return (
     <div className="app">
@@ -381,7 +385,7 @@ export const App: FC = () => {
         onClose={(id) => { void handleCloseTab(id); }}
         onNewTab={handleNewTab}
       />
-      <main className="app-content">
+      <main className={mainClassName}>
         {activeTab ? (
           isEditMode ? (
             <MarkdownEditor
