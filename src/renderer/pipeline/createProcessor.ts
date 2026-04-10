@@ -26,6 +26,13 @@ import { rehypeImageResolve } from './rehypeImageResolve';
 import { remarkStrongFallback } from './remarkStrongFallback';
 import { remarkFrontmatterTable } from './remarkFrontmatterTable';
 import { rehypeFrontmatterTable } from './rehypeFrontmatterTable';
+import { rehypeCollectHeadings } from './rehypeCollectHeadings';
+import type { TocHeading } from '../../shared/types/toc';
+
+export type ProcessMarkdownResult = {
+  readonly rendered: ReactElement;
+  readonly headings: readonly TocHeading[];
+};
 
 type AnyProps = Record<string, unknown>;
 
@@ -74,6 +81,7 @@ const buildProcessor = (basePath: string) => {
   processor.use(remarkStrongFallback);
   processor.use(remarkRehype, { handlers: { yaml: yamlToHast } });
   processor.use(rehypeFrontmatterTable);
+  processor.use(rehypeCollectHeadings);
   processor.use(rehypeKatex);
   processor.use(rehypeSourceLines);
   if (basePath) {
@@ -128,8 +136,12 @@ const buildProcessor = (basePath: string) => {
   return processor;
 };
 
-export const processMarkdown = (markdown: string, basePath = ''): ReactElement => {
+export const processMarkdown = (markdown: string, basePath = ''): ProcessMarkdownResult => {
   const processor = buildProcessor(basePath);
   const file = processor.processSync(markdown);
-  return file.result as ReactElement;
+  const data = file.data as { headings?: readonly TocHeading[] };
+  return {
+    rendered: file.result as ReactElement,
+    headings: data.headings ?? [],
+  };
 };
