@@ -1,12 +1,10 @@
-import { type FC, useCallback, useEffect, useRef } from 'react';
-import { useMarkdown } from '../hooks/useMarkdown';
+import { type FC, type ReactElement, useCallback, useEffect, useRef } from 'react';
 import { useSearch } from '../hooks/useSearch';
 import { SearchBar } from './SearchBar';
 import type { ScrollSettings } from '../../shared/types';
 
 type MarkdownViewProps = {
-  readonly content: string;
-  readonly filePath?: string;
+  readonly rendered: ReactElement;
   readonly initialLine?: number;
   readonly scrollSettings: ScrollSettings;
   readonly onTopLineChange?: (line: number) => void;
@@ -48,8 +46,7 @@ const scrollToLine = (container: HTMLElement, line: number): void => {
   }
 };
 
-export const MarkdownView: FC<MarkdownViewProps> = ({ content, filePath, initialLine, scrollSettings, onTopLineChange }) => {
-  const rendered = useMarkdown(content, filePath);
+export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scrollSettings, onTopLineChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const {
     isSearchOpen, matchCount, currentMatch,
