@@ -1,3 +1,5 @@
+import type { TocSettings } from './types/toc';
+
 export type IpcChannels = {
   'file:read': { args: readonly [filePath: string]; return: string };
   'file:open-dialog': { args: readonly []; return: string | null };
@@ -69,4 +71,5 @@ export type AppSettings = {
   readonly lightTheme?: ThemeOverrides;
   readonly darkTheme?: ThemeOverrides;
   readonly keybindings?: Partial<Record<string, string>>;
+  readonly toc?: Partial<TocSettings>;
 };
