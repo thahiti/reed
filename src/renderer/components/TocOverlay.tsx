@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useEffect, useRef, type FC } from 'react';
 import type { TocHeading, TocPosition } from '../../shared/types/toc';
 import './TocOverlay.css';
 
@@ -10,6 +10,18 @@ type Props = {
 };
 
 export const TocOverlay: FC<Props> = ({ headings, activeId, position, onItemClick }) => {
+  const activeRef = useRef<HTMLButtonElement>(null);
+
+  // Keep the active item visible within the TOC's own scroll container.
+  // `block: 'nearest'` is a no-op when already in view, avoiding jitter.
+  // The typeof check is for jsdom test env where scrollIntoView is undefined.
+  useEffect(() => {
+    const el = activeRef.current;
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeId]);
+
   if (headings.length === 0) return null;
   return (
     <aside
@@ -19,6 +31,7 @@ export const TocOverlay: FC<Props> = ({ headings, activeId, position, onItemClic
       {headings.map((h) => (
         <button
           key={h.id}
+          ref={activeId === h.id ? activeRef : null}
           type="button"
           data-level={String(h.level)}
           aria-current={activeId === h.id ? 'location' : undefined}
