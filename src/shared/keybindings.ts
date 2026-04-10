@@ -7,6 +7,7 @@ export const keybindingActions = [
   'tab:prev',
   'tab:next',
   'view:toggle-edit',
+  'view:toggle-toc',
   'help:show',
 ] as const;
 
@@ -21,6 +22,7 @@ export const defaultKeybindings: Readonly<Record<KeybindingAction, string>> = {
   'tab:prev': 'Ctrl+,',
   'tab:next': 'Ctrl+.',
   'view:toggle-edit': 'T',
+  'view:toggle-toc': 'O',
   'help:show': 'CmdOrCtrl+/',
 };
 
