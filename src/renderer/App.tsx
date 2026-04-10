@@ -361,7 +361,13 @@ export const App: FC = () => {
 
   const handleTocItemClick = useCallback((id: string) => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!(el instanceof HTMLElement)) return;
+    const container = el.closest('.markdown-view');
+    if (!(container instanceof HTMLElement)) return;
+    // Direct scrollTop assignment (no smooth) — a smooth animation races with
+    // MarkdownView's useEffect([initialLine]) that resnaps scroll when the
+    // parent re-renders mid-flight (IntersectionObserver → activeHeadingId).
+    container.scrollTop = el.offsetTop;
   }, []);
 
   const isDark = theme.name === 'dark';
