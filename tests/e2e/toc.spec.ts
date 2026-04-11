@@ -64,6 +64,62 @@ test.describe('TOC overlay', () => {
     }
   });
 
+  test('gg returns TOC active state to the first heading', async () => {
+    const longSample = [
+      '# Top',
+      '',
+      ...Array.from({ length: 20 }, (_, i) => `Intro paragraph ${String(i + 1)}.`).flatMap((p) => [p, '']),
+      '## Alpha',
+      '',
+      ...Array.from({ length: 30 }, (_, i) => `Alpha paragraph ${String(i + 1)}.`).flatMap((p) => [p, '']),
+      '## Beta',
+      '',
+      ...Array.from({ length: 30 }, (_, i) => `Beta paragraph ${String(i + 1)}.`).flatMap((p) => [p, '']),
+      '## Gamma',
+      '',
+      'Gamma content.',
+      '',
+    ].join('\n');
+    const testFile = resolve(__dirname, '../../test-fixture-toc-gg.md');
+    writeFileSync(testFile, longSample);
+
+    try {
+      const app = await electron.launch({ args: [appPath] });
+      const page = await app.firstWindow();
+      await page.waitForLoadState('domcontentloaded');
+
+      await app.evaluate(({ BrowserWindow }, filePath) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('app:open-file', filePath);
+      }, testFile);
+
+      await expect(page.locator('.tab-item')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('.markdown-content')).toBeVisible();
+
+      await page.keyboard.press('KeyO');
+      await expect(page.locator('aside.toc-overlay')).toBeVisible();
+
+      // Jump to Beta via TOC click
+      await page.locator('aside.toc-overlay button', { hasText: 'Beta' }).first().click();
+      await expect(page.locator('h2#beta')).toBeInViewport();
+      await expect(
+        page.locator('aside.toc-overlay button[aria-current="location"]'),
+      ).toHaveText('Beta');
+
+      // gg — go to top
+      await page.keyboard.press('KeyG');
+      await page.keyboard.press('KeyG');
+
+      await expect(
+        page.locator('aside.toc-overlay button[aria-current="location"]'),
+      ).toHaveText('Alpha');
+
+      await app.close();
+    } finally {
+      unlinkSync(testFile);
+    }
+  });
+
   test('O key does not toggle the overlay in edit mode', async () => {
     const testFile = resolve(__dirname, '../../test-fixture-toc-edit.md');
     writeFileSync(testFile, sample);

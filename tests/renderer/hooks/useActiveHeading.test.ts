@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useActiveHeading } from '../../../src/renderer/hooks/useActiveHeading';
 
-type ObserverCallback = (
-  entries: ReadonlyArray<{ readonly target: Element; readonly isIntersecting: boolean }>,
-) => void;
+type ObserverCallback = () => void;
 
 class MockIntersectionObserver {
   readonly callback: ObserverCallback;
@@ -22,19 +20,33 @@ class MockIntersectionObserver {
   disconnect() {
     this.observed = [];
   }
-  fire(entries: ReadonlyArray<{ readonly id: string; readonly isIntersecting: boolean }>) {
-    this.callback(
-      entries.map((e) => {
-        const target = document.getElementById(e.id);
-        if (!target) throw new Error(`no element with id ${e.id}`);
-        return { target, isIntersecting: e.isIntersecting };
-      }),
-    );
+  trigger() {
+    this.callback();
   }
 }
 
 // eslint-disable-next-line functional/no-let
 let instances: MockIntersectionObserver[] = [];
+
+const makeRect = (top: number): DOMRect => ({
+  top,
+  bottom: top + 20,
+  left: 0,
+  right: 100,
+  width: 100,
+  height: 20,
+  x: 0,
+  y: top,
+  toJSON: () => ({}),
+});
+
+const setRect = (id: string, top: number): void => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`no element with id ${id}`);
+  el.getBoundingClientRect = () => makeRect(top);
+};
+
+// jsdom default innerHeight = 768; threshold = 768 * 0.3 = 230.4
 
 beforeEach(() => {
   instances = [];
@@ -51,6 +63,9 @@ beforeEach(() => {
     <h2 id="beta">Beta</h2>
     <h2 id="gamma">Gamma</h2>
   `;
+  setRect('alpha', 0);
+  setRect('beta', 0);
+  setRect('gamma', 0);
 });
 
 afterEach(() => {
@@ -59,41 +74,50 @@ afterEach(() => {
 });
 
 describe('useActiveHeading', () => {
-  it('returns the first heading id immediately when headings are provided', () => {
-    const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
-    expect(result.current).toBe('alpha');
+  it('returns null when no ids provided', () => {
+    const { result } = renderHook(() => useActiveHeading([]));
+    expect(result.current).toBeNull();
   });
 
-  it('falls back to first heading when observer reports no intersecting entries', () => {
+  it('picks the last heading whose top is at or above the threshold', () => {
+    setRect('alpha', -100);
+    setRect('beta', 100);
+    setRect('gamma', 500);
     const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
-    act(() => {
-      instances[0]?.fire([
-        { id: 'alpha', isIntersecting: false },
-        { id: 'beta', isIntersecting: false },
-        { id: 'gamma', isIntersecting: false },
-      ]);
-    });
-    expect(result.current).toBe('alpha');
-  });
-
-  it('resets to the first heading when headingIds change', () => {
-    const { result, rerender } = renderHook(({ ids }) => useActiveHeading(ids), {
-      initialProps: { ids: ['alpha', 'beta'] },
-    });
-    expect(result.current).toBe('alpha');
-    rerender({ ids: ['beta', 'gamma'] });
     expect(result.current).toBe('beta');
   });
 
-  it('returns the topmost intersecting id based on headingIds order', () => {
+  it('falls back to the first heading when all headings are below the threshold', () => {
+    setRect('alpha', 400);
+    setRect('beta', 500);
+    setRect('gamma', 600);
     const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
-    act(() => {
-      instances[0]?.fire([
-        { id: 'beta', isIntersecting: true },
-        { id: 'gamma', isIntersecting: true },
-      ]);
-    });
+    expect(result.current).toBe('alpha');
+  });
+
+  it('picks the last heading when scrolled past all of them', () => {
+    setRect('alpha', -500);
+    setRect('beta', -300);
+    setRect('gamma', -100);
+    const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
+    expect(result.current).toBe('gamma');
+  });
+
+  it('recomputes when the observer fires after a scroll change (gg-to-top case)', () => {
+    setRect('alpha', -500);
+    setRect('beta', 100);
+    setRect('gamma', 500);
+    const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
     expect(result.current).toBe('beta');
+
+    // Simulate gg: scrolled to top, all headings now pushed below the threshold
+    setRect('alpha', 400);
+    setRect('beta', 600);
+    setRect('gamma', 800);
+    act(() => {
+      instances[0]?.trigger();
+    });
+    expect(result.current).toBe('alpha');
   });
 
   it('recreates the observer when headingIds change', () => {
@@ -103,10 +127,5 @@ describe('useActiveHeading', () => {
     expect(instances).toHaveLength(1);
     rerender({ ids: ['beta', 'gamma'] });
     expect(instances).toHaveLength(2);
-  });
-
-  it('returns null when no ids provided', () => {
-    const { result } = renderHook(() => useActiveHeading([]));
-    expect(result.current).toBeNull();
   });
 });
