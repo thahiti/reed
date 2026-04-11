@@ -53,13 +53,17 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
     openSearch, closeSearch, search, nextMatch, prevMatch,
   } = useSearch(containerRef);
 
+  const initialLineRef = useRef(initialLine);
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || initialLine === undefined) return;
+    const line = initialLineRef.current;
+    if (!el || line === undefined) return;
+    // Mount-only: prop updates must not re-snap scroll during render-driven
+    // activeHeadingId changes. Mode switches remount the component.
     requestAnimationFrame(() => {
-      scrollToLine(el, initialLine);
+      scrollToLine(el, line);
     });
-  }, [initialLine]);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
