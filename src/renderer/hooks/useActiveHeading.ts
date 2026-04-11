@@ -27,18 +27,23 @@ export const useActiveHeading = (headingIds: readonly string[]): string | null =
     };
     update();
 
-    const observer = new IntersectionObserver(update, {
-      rootMargin: `0px 0px -${String((1 - OBSERVATION_RATIO) * 100)}% 0px`,
-      threshold: 0,
-    });
+    // eslint-disable-next-line functional/no-let
+    let rafId = 0;
+    const scheduleUpdate = (): void => {
+      if (rafId !== 0) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        update();
+      });
+    };
 
-    headingIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    document.addEventListener('scroll', scheduleUpdate, true);
+    window.addEventListener('resize', scheduleUpdate);
 
     return () => {
-      observer.disconnect();
+      document.removeEventListener('scroll', scheduleUpdate, true);
+      window.removeEventListener('resize', scheduleUpdate);
+      if (rafId !== 0) cancelAnimationFrame(rafId);
     };
   }, [headingIds]);
 
