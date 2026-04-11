@@ -77,8 +77,7 @@ test.describe('TOC overlay', () => {
       ...Array.from({ length: 30 }, (_, i) => `Beta paragraph ${String(i + 1)}.`).flatMap((p) => [p, '']),
       '## Gamma',
       '',
-      'Gamma content.',
-      '',
+      ...Array.from({ length: 30 }, (_, i) => `Gamma paragraph ${String(i + 1)}.`).flatMap((p) => [p, '']),
     ].join('\n');
     const testFile = resolve(__dirname, '../../test-fixture-toc-gg.md');
     writeFileSync(testFile, longSample);
@@ -113,6 +112,13 @@ test.describe('TOC overlay', () => {
       await expect(
         page.locator('aside.toc-overlay button[aria-current="location"]'),
       ).toHaveText('Alpha');
+
+      // G — go to end
+      await page.keyboard.press('Shift+KeyG');
+
+      await expect(
+        page.locator('aside.toc-overlay button[aria-current="location"]'),
+      ).toHaveText('Gamma');
 
       await app.close();
     } finally {
