@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react';
 
+const OBSERVATION_RATIO = 0.3;
+
+const computeActiveHeading = (headingIds: readonly string[]): string | null => {
+  if (headingIds.length === 0) return null;
+  const threshold = window.innerHeight * OBSERVATION_RATIO;
+  const active = headingIds.reduce<string | null>((acc, id) => {
+    const el = document.getElementById(id);
+    if (!el) return acc;
+    return el.getBoundingClientRect().top <= threshold ? id : acc;
+  }, null);
+  return active ?? headingIds[0] ?? null;
+};
+
 export const useActiveHeading = (headingIds: readonly string[]): string | null => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -9,18 +22,15 @@ export const useActiveHeading = (headingIds: readonly string[]): string | null =
       return;
     }
 
-    setActiveId((prev) => (prev !== null && headingIds.includes(prev) ? prev : headingIds[0] ?? null));
+    const update = (): void => {
+      setActiveId(computeActiveHeading(headingIds));
+    };
+    update();
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const intersectingIds = new Set(
-          entries.filter((e) => e.isIntersecting).map((e) => e.target.id),
-        );
-        const firstVisible = headingIds.find((id) => intersectingIds.has(id));
-        if (firstVisible !== undefined) setActiveId(firstVisible);
-      },
-      { rootMargin: '0px 0px -70% 0px', threshold: 0 },
-    );
+    const observer = new IntersectionObserver(update, {
+      rootMargin: `0px 0px -${String((1 - OBSERVATION_RATIO) * 100)}% 0px`,
+      threshold: 0,
+    });
 
     headingIds.forEach((id) => {
       const el = document.getElementById(id);
