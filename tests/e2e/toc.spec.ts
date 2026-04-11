@@ -48,6 +48,10 @@ test.describe('TOC overlay', () => {
       await page.keyboard.press('KeyO');
       await expect(page.locator('aside.toc-overlay')).toBeVisible();
 
+      const activeItem = page.locator('aside.toc-overlay button[aria-current="location"]');
+      await expect(activeItem).toHaveCount(1);
+      await expect(activeItem).toHaveText('Alpha');
+
       await page.locator('aside.toc-overlay button', { hasText: 'Beta' }).first().click();
       await expect(page.locator('h2#beta')).toBeInViewport();
 
