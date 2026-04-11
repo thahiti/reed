@@ -153,6 +153,17 @@ export const App: FC = () => {
           setIsEditMode((prev) => !prev);
         }
       }
+      // Copy file path (no input focused)
+      if (matchAccelerator(e, kb['file:copy-path'], isMac)) {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.classList.contains('cm-content');
+        if (!isInputFocused && activeTab?.filePath) {
+          e.preventDefault();
+          void navigator.clipboard.writeText(activeTab.filePath);
+        }
+      }
       // Toggle TOC overlay (read mode only, no input focused)
       if (matchAccelerator(e, kb['view:toggle-toc'], isMac)) {
         const target = e.target as HTMLElement;
@@ -206,7 +217,7 @@ export const App: FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [tabs, activeTabId, setActiveTab, handleFileOpenDialog, handleSave, handleNewTab, isEditMode, kb, isMac]);
+  }, [tabs, activeTabId, activeTab, setActiveTab, handleFileOpenDialog, handleSave, handleNewTab, isEditMode, kb, isMac]);
 
   // Drag & Drop
   useEffect(() => {
@@ -313,6 +324,16 @@ export const App: FC = () => {
     });
     return unsub;
   }, [handleSave]);
+
+  // Menu — copy file path
+  useEffect(() => {
+    const unsub = window.api.on('menu:copy-file-path', () => {
+      if (activeTab?.filePath) {
+        void navigator.clipboard.writeText(activeTab.filePath);
+      }
+    });
+    return unsub;
+  }, [activeTab]);
 
   // Menu — set body font
   useEffect(() => {

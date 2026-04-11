@@ -14,6 +14,7 @@ const helpContent = `
 | ⌘O | Open file |
 | ⌘P | Quick Open (recent files) |
 | ⌘S | Save file |
+| C | Copy current file path |
 | ⌘W | Close tab |
 
 ## Edit Mode
@@ -90,6 +91,7 @@ All keyboard shortcuts can be customized in settings:
       "file:open": "CmdOrCtrl+O",
       "file:quick-open": "CmdOrCtrl+P",
       "file:save": "CmdOrCtrl+S",
+      "file:copy-path": "C",
       "tab:close": "CmdOrCtrl+W",
       "tab:prev": "Ctrl+,",
       "tab:next": "Ctrl+.",
@@ -160,6 +162,13 @@ export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Me
           label: 'Save',
           accelerator: kb['file:save'],
           click: () => { mainWindow.webContents.send('menu:save'); },
+        },
+        { type: 'separator' },
+        {
+          label: 'Copy File Path',
+          accelerator: kb['file:copy-path'],
+          click: () => { mainWindow.webContents.send('menu:copy-file-path'); },
+          registerAccelerator: false,
         },
         { type: 'separator' },
         {

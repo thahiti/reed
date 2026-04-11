@@ -26,4 +26,9 @@ describe('keybindings', () => {
     const result = mergeKeybindings(undefined);
     expect(result['file:new']).toBe('CmdOrCtrl+N');
   });
+
+  it('should include file:copy-path with default C', () => {
+    const result = mergeKeybindings(undefined);
+    expect(result['file:copy-path']).toBe('C');
+  });
 });
