@@ -9,6 +9,8 @@ export const useActiveHeading = (headingIds: readonly string[]): string | null =
       return;
     }
 
+    setActiveId((prev) => (prev !== null && headingIds.includes(prev) ? prev : headingIds[0] ?? null));
+
     const observer = new IntersectionObserver(
       (entries) => {
         const intersectingIds = new Set(

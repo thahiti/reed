@@ -59,9 +59,30 @@ afterEach(() => {
 });
 
 describe('useActiveHeading', () => {
-  it('returns null initially', () => {
+  it('returns the first heading id immediately when headings are provided', () => {
     const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
-    expect(result.current).toBeNull();
+    expect(result.current).toBe('alpha');
+  });
+
+  it('falls back to first heading when observer reports no intersecting entries', () => {
+    const { result } = renderHook(() => useActiveHeading(['alpha', 'beta', 'gamma']));
+    act(() => {
+      instances[0]?.fire([
+        { id: 'alpha', isIntersecting: false },
+        { id: 'beta', isIntersecting: false },
+        { id: 'gamma', isIntersecting: false },
+      ]);
+    });
+    expect(result.current).toBe('alpha');
+  });
+
+  it('resets to the first heading when headingIds change', () => {
+    const { result, rerender } = renderHook(({ ids }) => useActiveHeading(ids), {
+      initialProps: { ids: ['alpha', 'beta'] },
+    });
+    expect(result.current).toBe('alpha');
+    rerender({ ids: ['beta', 'gamma'] });
+    expect(result.current).toBe('beta');
   });
 
   it('returns the topmost intersecting id based on headingIds order', () => {
