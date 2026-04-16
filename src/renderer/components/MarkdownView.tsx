@@ -49,8 +49,8 @@ const scrollToLine = (container: HTMLElement, line: number): void => {
 export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scrollSettings, onTopLineChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const {
-    isSearchOpen, matchCount, currentMatch,
-    openSearch, closeSearch, search, nextMatch, prevMatch,
+    phase, query: searchQuery, matchCount, currentIndex,
+    openSearch, closeSearch, confirmSearch, search, nextMatch, prevMatch,
   } = useSearch(containerRef);
 
   const initialLineRef = useRef(initialLine);
@@ -80,7 +80,7 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
   const LINE_HEIGHT = 24;
 
   const handleVimKeys = useCallback((e: KeyboardEvent) => {
-    if (isSearchOpen) return;
+    if (phase === 'inputting') return;
 
     const el = containerRef.current;
     if (!el) return;
@@ -113,11 +113,9 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
         break;
       case 'KeyG':
         if (e.shiftKey) {
-          // G (Shift+g) — go to end
           e.preventDefault();
           el.scrollTop = el.scrollHeight;
         } else if (pendingGRef.current) {
-          // gg — go to top
           e.preventDefault();
           el.scrollTop = 0;
           pendingGRef.current = false;
@@ -127,19 +125,27 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
         }
         break;
       case 'KeyN':
-        e.preventDefault();
-        if (e.shiftKey) {
-          prevMatch();
-        } else {
-          nextMatch();
+        if (phase === 'confirmed') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            prevMatch();
+          } else {
+            nextMatch();
+          }
         }
         break;
       case 'Slash':
         e.preventDefault();
         openSearch();
         break;
+      case 'Escape':
+        if (phase === 'confirmed') {
+          e.preventDefault();
+          closeSearch();
+        }
+        break;
     }
-  }, [scrollSettings, isSearchOpen, openSearch, nextMatch, prevMatch]);
+  }, [scrollSettings, phase, openSearch, closeSearch, nextMatch, prevMatch]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleVimKeys);
@@ -149,13 +155,13 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
   return (
     <div className="markdown-view" ref={containerRef}>
       <SearchBar
-        isOpen={isSearchOpen}
-        onClose={closeSearch}
-        onSearch={search}
-        onNext={nextMatch}
-        onPrev={prevMatch}
+        phase={phase}
+        query={searchQuery}
         matchCount={matchCount}
-        currentMatch={currentMatch}
+        currentIndex={currentIndex}
+        onSearch={search}
+        onConfirm={confirmSearch}
+        onClose={closeSearch}
       />
       <div className="markdown-content">{rendered}</div>
     </div>
