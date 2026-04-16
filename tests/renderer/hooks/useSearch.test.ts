@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Test the pure highlightMatches function directly
 // We need to export it from useSearch.ts for testing
@@ -68,5 +68,128 @@ describe('clearHighlights', () => {
     clearHighlights(container);
     expect(container.querySelectorAll('mark.search-highlight')).toHaveLength(0);
     expect(container.textContent).toBe('hello world');
+  });
+});
+
+import { renderHook, act } from '@testing-library/react';
+import { beforeAll } from 'vitest';
+import { useSearch } from '../../../src/renderer/hooks/useSearch';
+
+describe('useSearch state machine', () => {
+  beforeAll(() => {
+    // jsdom doesn't implement scrollIntoView — assign before spying so the property exists
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+  });
+  const createContainerRef = () => {
+    const el = document.createElement('div');
+    el.innerHTML = '<p>the cat and the dog and the bird</p>';
+    // Mock scrollTop as a writable property
+    Object.defineProperty(el, 'scrollTop', { value: 0, writable: true });
+    Object.defineProperty(el, 'scrollHeight', { value: 2000, writable: false });
+    return { current: el };
+  };
+
+  it('starts in idle phase', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    expect(result.current.phase).toBe('idle');
+  });
+
+  it('transitions idle → inputting on openSearch', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    expect(result.current.phase).toBe('inputting');
+  });
+
+  it('transitions inputting → confirmed on confirmSearch', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    act(() => { result.current.confirmSearch(); });
+    expect(result.current.phase).toBe('confirmed');
+    expect(result.current.matchCount).toBe(3);
+    expect(result.current.query).toBe('the');
+  });
+
+  it('transitions inputting → idle on confirmSearch with empty query', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.confirmSearch(); });
+    expect(result.current.phase).toBe('idle');
+  });
+
+  it('transitions inputting → idle on closeSearch and restores scrollTop', () => {
+    const ref = createContainerRef();
+    ref.current.scrollTop = 500;
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    // Simulate user scrolling during search
+    ref.current.scrollTop = 200;
+    act(() => { result.current.closeSearch(); });
+    expect(result.current.phase).toBe('idle');
+    expect(ref.current.scrollTop).toBe(500);
+  });
+
+  it('transitions confirmed → idle on closeSearch without restoring scrollTop', () => {
+    const ref = createContainerRef();
+    ref.current.scrollTop = 500;
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    act(() => { result.current.confirmSearch(); });
+    ref.current.scrollTop = 800;
+    act(() => { result.current.closeSearch(); });
+    expect(result.current.phase).toBe('idle');
+    expect(ref.current.scrollTop).toBe(800);
+  });
+
+  it('transitions confirmed → inputting on openSearch', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    act(() => { result.current.confirmSearch(); });
+    act(() => { result.current.openSearch(); });
+    expect(result.current.phase).toBe('inputting');
+  });
+
+  it('nextMatch cycles through matches in confirmed phase', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    act(() => { result.current.confirmSearch(); });
+    expect(result.current.currentIndex).toBe(0);
+    act(() => { result.current.nextMatch(); });
+    expect(result.current.currentIndex).toBe(1);
+    act(() => { result.current.nextMatch(); });
+    expect(result.current.currentIndex).toBe(2);
+    act(() => { result.current.nextMatch(); });
+    expect(result.current.currentIndex).toBe(0); // wraps
+  });
+
+  it('prevMatch cycles backwards in confirmed phase', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    act(() => { result.current.confirmSearch(); });
+    expect(result.current.currentIndex).toBe(0);
+    act(() => { result.current.prevMatch(); });
+    expect(result.current.currentIndex).toBe(2); // wraps to last
+  });
+
+  it('closeSearch clears highlights', () => {
+    const ref = createContainerRef();
+    const { result } = renderHook(() => useSearch(ref));
+    act(() => { result.current.openSearch(); });
+    act(() => { result.current.search('the'); });
+    expect(ref.current.querySelectorAll('mark.search-highlight').length).toBeGreaterThan(0);
+    act(() => { result.current.closeSearch(); });
+    expect(ref.current.querySelectorAll('mark.search-highlight').length).toBe(0);
   });
 });
