@@ -1,62 +1,76 @@
 import { type FC, useCallback, useEffect, useRef, useState } from 'react';
+import type { SearchPhase } from '../hooks/useSearch';
 
 type SearchBarProps = {
-  readonly isOpen: boolean;
-  readonly onClose: () => void;
-  readonly onSearch: (query: string) => void;
-  readonly onNext: () => void;
-  readonly onPrev: () => void;
+  readonly phase: SearchPhase;
+  readonly query: string;
   readonly matchCount: number;
-  readonly currentMatch: number;
+  readonly currentIndex: number;
+  readonly onSearch: (query: string) => void;
+  readonly onConfirm: () => void;
+  readonly onClose: () => void;
+};
+
+const MatchCount: FC<{ readonly query: string; readonly matchCount: number; readonly currentIndex: number }> = ({
+  query, matchCount, currentIndex,
+}) => {
+  if (!query) return null;
+  return (
+    <span className="search-bar-count">
+      {matchCount === 0 ? 'No matches' : `${String(currentIndex + 1)}/${String(matchCount)}`}
+    </span>
+  );
 };
 
 export const SearchBar: FC<SearchBarProps> = ({
-  isOpen, onClose, onSearch, onNext, onPrev, matchCount, currentMatch,
+  phase, query, matchCount, currentIndex, onSearch, onConfirm, onClose,
 }) => {
-  const [query, setQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      onSearch('');
+    if (phase === 'inputting') {
+      setInputValue('');
       requestAnimationFrame(() => { inputRef.current?.focus(); });
     }
-  }, [isOpen, onSearch]);
+  }, [phase]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
+      e.preventDefault();
       onClose();
     } else if (e.key === 'Enter') {
-      if (e.shiftKey) {
-        onPrev();
-      } else {
-        onNext();
-      }
+      e.preventDefault();
+      onConfirm();
     }
-  }, [onClose, onNext, onPrev]);
+  }, [onClose, onConfirm]);
 
-  if (!isOpen) return null;
+  if (phase === 'idle') return null;
 
+  if (phase === 'confirmed') {
+    return (
+      <div className="search-bar search-bar-confirmed">
+        <span className="search-bar-query">/{query}</span>
+        <MatchCount query={query} matchCount={matchCount} currentIndex={currentIndex} />
+      </div>
+    );
+  }
+
+  // phase === 'inputting'
   return (
-    <div className="search-bar">
+    <div className="search-bar search-bar-inputting">
+      <span className="search-bar-prefix">/</span>
       <input
         ref={inputRef}
         className="search-bar-input"
-        placeholder="Search..."
-        value={query}
+        value={inputValue}
         onChange={(e) => {
-          setQuery(e.target.value);
+          setInputValue(e.target.value);
           onSearch(e.target.value);
         }}
         onKeyDown={handleKeyDown}
       />
-      <span className="search-bar-count">
-        {query ? `${String(currentMatch + 1)}/${String(matchCount)}` : ''}
-      </span>
-      <button className="search-bar-btn" onClick={onPrev} disabled={matchCount === 0}>▲</button>
-      <button className="search-bar-btn" onClick={onNext} disabled={matchCount === 0}>▼</button>
-      <button className="search-bar-btn" onClick={onClose}>✕</button>
+      <MatchCount query={inputValue} matchCount={matchCount} currentIndex={currentIndex} />
     </div>
   );
 };
