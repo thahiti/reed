@@ -7,7 +7,7 @@ type SearchState = {
   readonly currentIndex: number;
 };
 
-const clearHighlights = (container: HTMLElement): void => {
+export const clearHighlights = (container: HTMLElement): void => {
   container.querySelectorAll('mark.search-highlight').forEach((mark) => {
     const parent = mark.parentNode;
     if (parent) {
@@ -17,7 +17,7 @@ const clearHighlights = (container: HTMLElement): void => {
   });
 };
 
-const highlightMatches = (container: HTMLElement, query: string): ReadonlyArray<Element> => {
+export const highlightMatches = (container: HTMLElement, query: string): ReadonlyArray<Element> => {
   clearHighlights(container);
   if (!query.trim()) return [];
 
@@ -33,32 +33,51 @@ const highlightMatches = (container: HTMLElement, query: string): ReadonlyArray<
 
   const marks: Element[] = [];
 
-  textNodes.forEach((textNode) => {
+  // Process nodes in reverse so DOM mutations don't shift indices of earlier nodes
+  for (let i = textNodes.length - 1; i >= 0; i--) {
+    const textNode = textNodes[i];
+    if (!textNode) continue;
     const text = textNode.textContent || '';
     const lowerText = text.toLowerCase();
-    const idx = lowerText.indexOf(lowerQuery);
-    if (idx === -1) return;
-
     const parent = textNode.parentNode;
-    if (!parent || parent.nodeName === 'MARK') return;
+    if (!parent || parent.nodeName === 'MARK') continue;
 
-    const before = text.slice(0, idx);
-    const match = text.slice(idx, idx + query.length);
-    const after = text.slice(idx + query.length);
+    // Find all match positions in this text node
+    const positions: number[] = [];
+    let searchFrom = 0;
+    while (searchFrom <= lowerText.length - lowerQuery.length) {
+      const idx = lowerText.indexOf(lowerQuery, searchFrom);
+      if (idx === -1) break;
+      positions.push(idx);
+      searchFrom = idx + lowerQuery.length;
+    }
 
-    const mark = document.createElement('mark');
-    mark.className = 'search-highlight';
-    mark.textContent = match;
-    marks.push(mark);
+    if (positions.length === 0) continue;
 
+    // Build fragment by splitting text at match boundaries
     const frag = document.createDocumentFragment();
-    if (before) frag.appendChild(document.createTextNode(before));
-    frag.appendChild(mark);
-    if (after) frag.appendChild(document.createTextNode(after));
+    let lastEnd = 0;
+
+    for (const pos of positions) {
+      if (pos > lastEnd) {
+        frag.appendChild(document.createTextNode(text.slice(lastEnd, pos)));
+      }
+      const mark = document.createElement('mark');
+      mark.className = 'search-highlight';
+      mark.textContent = text.slice(pos, pos + query.length);
+      frag.appendChild(mark);
+      lastEnd = pos + query.length;
+    }
+
+    if (lastEnd < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(lastEnd)));
+    }
 
     parent.replaceChild(frag, textNode);
-  });
+  }
 
+  // Collect marks in document order after all mutations
+  container.querySelectorAll('mark.search-highlight').forEach((m) => marks.push(m));
   return marks;
 };
 
