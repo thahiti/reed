@@ -1,12 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 
-type SearchState = {
-  readonly isOpen: boolean;
-  readonly query: string;
-  readonly matches: ReadonlyArray<Element>;
-  readonly currentIndex: number;
-};
-
 export const clearHighlights = (container: HTMLElement): void => {
   container.querySelectorAll('mark.search-highlight').forEach((mark) => {
     const parent = mark.parentNode;
@@ -27,11 +20,11 @@ export const highlightMatches = (container: HTMLElement, query: string): Readonl
 
   let node = walker.nextNode();
   while (node) {
-    textNodes.push(node as Text);
+    if (node instanceof Text) {
+      textNodes.push(node);
+    }
     node = walker.nextNode();
   }
-
-  const marks: Element[] = [];
 
   // Process nodes in reverse so DOM mutations don't shift indices of earlier nodes
   for (let i = textNodes.length - 1; i >= 0; i--) {
@@ -77,8 +70,7 @@ export const highlightMatches = (container: HTMLElement, query: string): Readonl
   }
 
   // Collect marks in document order after all mutations
-  container.querySelectorAll('mark.search-highlight').forEach((m) => marks.push(m));
-  return marks;
+  return Array.from(container.querySelectorAll('mark.search-highlight'));
 };
 
 const scrollToMatch = (container: HTMLElement, matches: ReadonlyArray<Element>, index: number): void => {
@@ -96,25 +88,74 @@ const scrollToMatch = (container: HTMLElement, matches: ReadonlyArray<Element>, 
   }
 };
 
+export type SearchPhase = 'idle' | 'inputting' | 'confirmed';
+
+type SearchState = {
+  readonly phase: SearchPhase;
+  readonly query: string;
+  readonly matches: ReadonlyArray<Element>;
+  readonly currentIndex: number;
+  readonly savedScrollTop: number;
+};
+
+const initialState: SearchState = {
+  phase: 'idle',
+  query: '',
+  matches: [],
+  currentIndex: 0,
+  savedScrollTop: 0,
+};
+
 export const useSearch = (containerRef: React.RefObject<HTMLElement | null>) => {
-  const [state, setState] = useState<SearchState>({
-    isOpen: false,
-    query: '',
-    matches: [],
-    currentIndex: 0,
-  });
-
+  const [state, setState] = useState(initialState);
   const matchesRef = useRef<ReadonlyArray<Element>>([]);
+  const phaseRef = useRef<SearchPhase>('idle');
+  const savedScrollTopRef = useRef(0);
+  const queryRef = useRef('');
+  const currentIndexRef = useRef(0);
 
-  const open = useCallback(() => {
-    setState((prev) => ({ ...prev, isOpen: true, query: '', matches: [], currentIndex: 0 }));
-  }, []);
+  // Keep refs in sync so callbacks can read current values synchronously
+  phaseRef.current = state.phase;
+  queryRef.current = state.query;
+  currentIndexRef.current = state.currentIndex;
 
-  const close = useCallback(() => {
+  const openSearch = useCallback(() => {
     const el = containerRef.current;
     if (el) clearHighlights(el);
     matchesRef.current = [];
-    setState({ isOpen: false, query: '', matches: [], currentIndex: 0 });
+    const scrollTop = el?.scrollTop ?? 0;
+    savedScrollTopRef.current = scrollTop;
+    setState({
+      ...initialState,
+      phase: 'inputting',
+      savedScrollTop: scrollTop,
+    });
+  }, [containerRef]);
+
+  const closeSearch = useCallback(() => {
+    const el = containerRef.current;
+    if (el) clearHighlights(el);
+    matchesRef.current = [];
+    if (phaseRef.current === 'inputting' && el) {
+      el.scrollTop = savedScrollTopRef.current;
+    }
+    // confirmed → idle: keep current scrollTop (don't restore)
+    setState(initialState);
+  }, [containerRef]);
+
+  const confirmSearch = useCallback(() => {
+    if (!queryRef.current.trim()) {
+      // Empty query — go back to idle
+      const el = containerRef.current;
+      if (el) {
+        clearHighlights(el);
+        el.scrollTop = savedScrollTopRef.current;
+      }
+      matchesRef.current = [];
+      setState(initialState);
+      return;
+    }
+    setState((prev) => ({ ...prev, phase: 'confirmed' }));
   }, [containerRef]);
 
   const search = useCallback((query: string) => {
@@ -129,34 +170,34 @@ export const useSearch = (containerRef: React.RefObject<HTMLElement | null>) => 
     setState((prev) => ({ ...prev, query, matches, currentIndex }));
   }, [containerRef]);
 
-  const next = useCallback(() => {
+  const nextMatch = useCallback(() => {
     const el = containerRef.current;
     if (!el || matchesRef.current.length === 0) return;
-    setState((prev) => {
-      const nextIndex = (prev.currentIndex + 1) % prev.matches.length;
-      scrollToMatch(el, matchesRef.current, nextIndex);
-      return { ...prev, currentIndex: nextIndex };
-    });
+    const nextIndex = (currentIndexRef.current + 1) % matchesRef.current.length;
+    scrollToMatch(el, matchesRef.current, nextIndex);
+    currentIndexRef.current = nextIndex;
+    setState((prev) => ({ ...prev, currentIndex: nextIndex }));
   }, [containerRef]);
 
-  const prev = useCallback(() => {
+  const prevMatch = useCallback(() => {
     const el = containerRef.current;
     if (!el || matchesRef.current.length === 0) return;
-    setState((prev) => {
-      const prevIndex = (prev.currentIndex - 1 + prev.matches.length) % prev.matches.length;
-      scrollToMatch(el, matchesRef.current, prevIndex);
-      return { ...prev, currentIndex: prevIndex };
-    });
+    const prevIndex = (currentIndexRef.current - 1 + matchesRef.current.length) % matchesRef.current.length;
+    scrollToMatch(el, matchesRef.current, prevIndex);
+    currentIndexRef.current = prevIndex;
+    setState((prev) => ({ ...prev, currentIndex: prevIndex }));
   }, [containerRef]);
 
   return {
-    isSearchOpen: state.isOpen,
+    phase: state.phase,
+    query: state.query,
     matchCount: state.matches.length,
-    currentMatch: state.currentIndex,
-    openSearch: open,
-    closeSearch: close,
+    currentIndex: state.currentIndex,
+    openSearch,
+    closeSearch,
+    confirmSearch,
     search,
-    nextMatch: next,
-    prevMatch: prev,
+    nextMatch,
+    prevMatch,
   };
 };
