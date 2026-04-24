@@ -31,4 +31,27 @@ describe('openFileQueue', () => {
     const queue = createOpenFileQueue();
     expect(queue.drain()).toEqual([]);
   });
+
+  it('should re-queue when sender is reset after being set', () => {
+    const sent: string[] = [];
+    const queue = createOpenFileQueue();
+    queue.setSender((filePath) => { sent.push(filePath); });
+    queue.enqueue('/test/a.md');
+    expect(sent).toEqual(['/test/a.md']);
+
+    queue.resetSender();
+    queue.enqueue('/test/b.md');
+    expect(sent).toEqual(['/test/a.md']);
+    expect(queue.drain()).toEqual(['/test/b.md']);
+  });
+
+  it('should flush pending files after sender is reset and set again', () => {
+    const sent: string[] = [];
+    const queue = createOpenFileQueue();
+    queue.setSender((filePath) => { sent.push(filePath); });
+    queue.resetSender();
+    queue.enqueue('/test/a.md');
+    queue.setSender((filePath) => { sent.push(filePath); });
+    expect(sent).toEqual(['/test/a.md']);
+  });
 });
