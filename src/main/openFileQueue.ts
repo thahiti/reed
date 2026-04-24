@@ -3,6 +3,7 @@ type FileSender = (filePath: string) => void;
 type OpenFileQueue = {
   readonly enqueue: (filePath: string) => void;
   readonly setSender: (sender: FileSender) => void;
+  readonly resetSender: () => void;
   readonly drain: () => ReadonlyArray<string>;
 };
 
@@ -23,6 +24,7 @@ export const createOpenFileQueue = (): OpenFileQueue => {
       pending.forEach((filePath) => { s(filePath); });
       pending.length = 0;
     },
+    resetSender: () => { sender = null; },
     drain: () => [...pending],
   };
 };
