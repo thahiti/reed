@@ -47,7 +47,7 @@ The `Link` component already accepts an `onOpenFile` prop, but `createProcessor.
 ## Data Model
 
 ```ts
-type HistoryEntry = {
+type NavHistoryEntry = {
   readonly filePath: string;
   readonly topLine: number;      // last known top-visible line in this entry
   readonly anchorId?: string;    // set if entered via an anchor link
@@ -60,7 +60,7 @@ type Tab = {
   readonly content: string;
   readonly modified: boolean;
   // new fields
-  readonly history: ReadonlyArray<HistoryEntry>;
+  readonly history: ReadonlyArray<NavHistoryEntry>;
   readonly historyIndex: number;
 };
 ```
@@ -117,18 +117,19 @@ type Tab = {
 ├──────────────────────────────────────────────────────────────┤
 │ Main                                                         │
 │                                                              │
-│  fileHandlers.ts                                             │
-│    file:read-relative(basePath, relPath)                     │
-│      → resolved = path.resolve(path.dirname(basePath), rel)  │
-│      → on stat/read failure → null                           │
-│      → on success → { absolutePath, content }                │
+│  fileHandlers.ts (NO new handler needed)                     │
+│    Reuse existing file:resolve-path + file:read              │
+│    App.handleNavigate does:                                  │
+│      absPath = invoke('file:resolve-path', base, rel)        │
+│      content = invoke('file:read', absPath)                  │
+│      both errors caught → flash                              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ### Why resolve in main, not renderer
 
 - Node's `path.resolve` is canonical and cross-platform safe.
-- Resolve + existence check + read are bundled in a single IPC round-trip, avoiding TOCTOU races.
+- Existing `file:resolve-path` handler already does resolve + path-traversal validation; reusing it is strictly better than adding a duplicate handler.
 - Keeps the renderer free of path-manipulation logic.
 
 ### Why a new `onNavigate` prop instead of reusing `onOpenFile`
@@ -140,7 +141,7 @@ type Tab = {
 ### Anchor handling
 
 - `href = "docs/foo.md#heading-id"` splits into `relPath = "docs/foo.md"` and `anchorId = "heading-id"`.
-- `anchorId` is stored on the new `HistoryEntry` and forwarded to `MarkdownView` via `initialAnchorId`.
+- `anchorId` is stored on the new `NavHistoryEntry` and forwarded to `MarkdownView` via `initialAnchorId`.
 - On mount/update the view does `document.getElementById(anchorId)?.scrollIntoView({ block: 'start' })` inside the scroll container.
 - If no anchor, the view falls back to `initialLine = entry.topLine`.
 - Pure in-page anchors (`#foo` with no file part) keep today's browser-default behavior.
@@ -155,9 +156,11 @@ Link.onClick
 App.handleNavigate
   activeTab.modified? → flash + return
   split → { relPath: "docs/design.md", anchorId: "api" }
-  IPC file:read-relative("/repo/README.md", "docs/design.md")
-  result { absolutePath: "/repo/docs/design.md", content }
-  navigateTab(activeTabId, { filePath, fileName: "design.md", content, anchorId })
+  try {
+    absPath = await invoke('file:resolve-path', "/repo/README.md", "docs/design.md")
+    content = await invoke('file:read', absPath)
+  } catch { flash + return }
+  navigateTab(activeTabId, { filePath: absPath, fileName: "design.md", content, anchorId })
 useTabs.navigateTab
   patch history[historyIndex].topLine ← current topLineRef.current
   history := [...slice(0, historyIndex+1), { filePath, topLine: 1, anchorId: "api" }]
@@ -181,8 +184,8 @@ useTabs.goBack
   historyIndex -= 1
   returns { filePath: prev.filePath, topLine: prev.topLine, anchorId: prev.anchorId }
 App
-  invoke file:read-relative(prev.filePath, "")  // re-read from disk
-  on null → console.warn, NOOP (history is NOT reverted)
+  try { content = await invoke('file:read', prev.filePath) }
+  catch { console.warn, NOOP (history is NOT reverted) }
   on success → patch tab content/filePath/fileName, apply initialLine or anchor scroll
 ```
 
@@ -242,12 +245,9 @@ Edge cases intentionally not handled by dialogs; this is a viewer, and reader fl
 - Relative `.md` → `onNavigate(href)` invoked.
 - `flashError` prop transitions toggle the error class for 200 ms then clear.
 
-**`tests/main/ipc/fileHandlers.test.ts`** (extend)
+**`tests/main/ipc/fileHandlers.test.ts`** (existing, no changes)
 
-- `file:read-relative` returns `{ absolutePath, content }` for an existing relative path.
-- Returns `null` for a missing path.
-- Resolves `..` segments correctly.
-- Uses `path.dirname(basePath)` as the anchor directory.
+No new main handler. Existing `resolveRelativePath` already tested.
 
 ### E2E (`tests/e2e/linkNavigation.spec.ts`, new)
 
@@ -264,11 +264,11 @@ Edge cases intentionally not handled by dialogs; this is a viewer, and reader fl
 
 Each step is a single TDD loop and a single atomic commit.
 
-1. **types**: extend `HistoryEntry`, `Tab.history`, `Tab.historyIndex`; update shared type tests.
+1. **types**: extend `NavHistoryEntry`, `Tab.history`, `Tab.historyIndex`; update shared type tests.
 2. **useTabs – history init**: `openTab` seeds a one-entry history. Test.
 3. **useTabs – `navigateTab`**: push + forward-truncate semantics. Test.
 4. **useTabs – `goBack` / `goForward` / `updateCurrentTopLine`**. Test.
-5. **IPC – `file:read-relative`**: main handler + preload exposure. Test.
+5. **(skipped — reuse existing `file:resolve-path` + `file:read`)**
 6. **keybindings**: register `nav:back` / `nav:forward` defaults. Test.
 7. **Link component**: add `onNavigate`, `flashError`. Test.
 8. **createProcessor wiring**: pass `onNavigate`, `basePath` to Link.
