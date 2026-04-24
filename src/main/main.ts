@@ -11,9 +11,11 @@ import { createMenu } from './menu';
 import { createOpenFileQueue } from './openFileQueue';
 
 const openFileQueue = createOpenFileQueue();
+let mainWindow: BrowserWindow | null = null;
+let rebuildMenu: (() => void) | null = null;
 
 const createWindow = (): BrowserWindow => {
-  const mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 900,
     height: 670,
     webPreferences: {
@@ -25,11 +27,31 @@ const createWindow = (): BrowserWindow => {
   });
 
   if (process.env['ELECTRON_RENDERER_URL']) {
-    void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    void win.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    void win.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
+  win.webContents.on('did-finish-load', () => {
+    openFileQueue.setSender((filePath) => {
+      if (!win.isDestroyed()) {
+        win.webContents.send('app:open-file', filePath);
+      }
+    });
+  });
+
+  win.on('closed', () => {
+    openFileQueue.resetSender();
+    if (mainWindow === win) mainWindow = null;
+  });
+
+  return win;
+};
+
+const ensureMainWindow = (): BrowserWindow => {
+  if (mainWindow && !mainWindow.isDestroyed()) return mainWindow;
+  mainWindow = createWindow();
+  rebuildMenu?.();
   return mainWindow;
 };
 
@@ -40,33 +62,25 @@ void app.whenReady().then(() => {
   registerHistoryHandlers();
   registerDialogHandlers();
   const fileWatcher = registerFileWatchHandlers();
-  const mainWindow = createWindow();
 
-  const rebuildMenu = (): void => {
-    const updatedSettings = getSettings();
-    const menu = createMenu(mainWindow, updatedSettings);
+  mainWindow = createWindow();
+
+  rebuildMenu = (): void => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const menu = createMenu(mainWindow, getSettings());
     Menu.setApplicationMenu(menu);
   };
 
   registerSettingsHandlers(rebuildMenu);
-
-  const settings = getSettings();
-  const menu = createMenu(mainWindow, settings);
-  Menu.setApplicationMenu(menu);
+  rebuildMenu();
 
   const fileArg = process.argv.find((arg) => arg.endsWith('.md') || arg.endsWith('.markdown'));
   if (fileArg) {
     openFileQueue.enqueue(fileArg);
   }
 
-  mainWindow.webContents.on('did-finish-load', () => {
-    openFileQueue.setSender((filePath) => {
-      mainWindow.webContents.send('app:open-file', filePath);
-    });
-  });
-
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    ensureMainWindow();
   });
 
   app.on('window-all-closed', () => {
@@ -78,4 +92,7 @@ void app.whenReady().then(() => {
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
   openFileQueue.enqueue(filePath);
+  if (app.isReady()) {
+    ensureMainWindow();
+  }
 });
