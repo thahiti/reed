@@ -6,6 +6,7 @@ import type { ScrollSettings } from '../../shared/types';
 type MarkdownViewProps = {
   readonly rendered: ReactElement;
   readonly initialLine?: number;
+  readonly initialAnchorId?: string;
   readonly scrollSettings: ScrollSettings;
   readonly onTopLineChange?: (line: number) => void;
 };
@@ -46,7 +47,7 @@ const scrollToLine = (container: HTMLElement, line: number): void => {
   }
 };
 
-export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scrollSettings, onTopLineChange }) => {
+export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, initialAnchorId, scrollSettings, onTopLineChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const {
     phase, query: searchQuery, matchCount, currentIndex,
@@ -54,14 +55,23 @@ export const MarkdownView: FC<MarkdownViewProps> = ({ rendered, initialLine, scr
   } = useSearch(containerRef);
 
   const initialLineRef = useRef(initialLine);
+  const initialAnchorIdRef = useRef(initialAnchorId);
   useEffect(() => {
     const el = containerRef.current;
     const line = initialLineRef.current;
-    if (!el || line === undefined) return;
+    const anchorId = initialAnchorIdRef.current;
+    if (!el) return;
     // Mount-only: prop updates must not re-snap scroll during render-driven
-    // activeHeadingId changes. Mode switches remount the component.
+    // activeHeadingId changes. Mode switches and history navigations remount.
     requestAnimationFrame(() => {
-      scrollToLine(el, line);
+      if (anchorId) {
+        const target = document.getElementById(anchorId);
+        if (target) {
+          target.scrollIntoView({ block: 'start' });
+          return;
+        }
+      }
+      if (line !== undefined) scrollToLine(el, line);
     });
   }, []);
 
