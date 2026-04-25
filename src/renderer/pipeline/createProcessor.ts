@@ -61,7 +61,8 @@ const isMermaidPre = (props: AnyProps): boolean => {
   const child = getFirstChild(props);
   if (!child || typeof child !== 'object') return false;
   const childEl = child as ChildElement;
-  return childEl.props?.className === 'language-mermaid';
+  const className = childEl.props?.className ?? '';
+  return className.split(' ').includes('language-mermaid');
 };
 
 const getMermaidChart = (props: AnyProps): string => {
