@@ -52,4 +52,20 @@ describe('useTheme', () => {
     await act(async () => {});
     expect(result.current.theme).toEqual(withDefaultFonts(darkTheme));
   });
+
+  it('should expose mode "light" by default', async () => {
+    const { result } = renderHook(() => useTheme());
+    await act(async () => {});
+    expect(result.current.mode).toBe('light');
+  });
+
+  it('should expose mode "dark" when system is dark', async () => {
+    mockInvoke.mockImplementation((channel: string) => {
+      if (channel === 'settings:get') return Promise.resolve(null);
+      return Promise.resolve('dark');
+    });
+    const { result } = renderHook(() => useTheme());
+    await act(async () => {});
+    expect(result.current.mode).toBe('dark');
+  });
 });

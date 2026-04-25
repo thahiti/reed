@@ -6,6 +6,8 @@ import type { Theme } from '../themes/types';
 import type { AppSettings, ThemeOverrides } from '../../shared/types';
 import { getBodyFontFamily, getCodeFontFamily, defaultBodyFontId, defaultCodeFontId } from '../../shared/fonts';
 
+type ThemeMode = 'light' | 'dark';
+
 const themeMap = { light: lightTheme, dark: darkTheme } as const;
 
 const mergeTheme = (base: Theme, overrides?: ThemeOverrides): Theme => {
@@ -28,28 +30,29 @@ const applyFontSettings = (theme: Theme, settings: AppSettings | null): Theme =>
 
 export const useTheme = () => {
   const [theme, setTheme] = useState(lightTheme);
+  const [mode, setMode] = useState<ThemeMode>('light');
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
-  // Load settings once
   useEffect(() => {
     void window.api.invoke('settings:get').then(setSettings);
   }, []);
 
   useEffect(() => {
-    const applyMode = (mode: 'light' | 'dark') => {
-      const base = themeMap[mode];
+    const applyMode = (next: ThemeMode) => {
+      const base = themeMap[next];
       const withFonts = applyFontSettings(base, settings);
-      const overrides = mode === 'light' ? settings?.lightTheme : settings?.darkTheme;
+      const overrides = next === 'light' ? settings?.lightTheme : settings?.darkTheme;
       const merged = mergeTheme(withFonts, overrides);
+      setMode(next);
       setTheme(merged);
       applyTheme(merged);
     };
 
     void window.api.invoke('theme:get-system').then(applyMode);
 
-    const unsubscribe = window.api.on('theme:on-change', (mode: unknown) => {
-      if (mode === 'light' || mode === 'dark') {
-        applyMode(mode);
+    const unsubscribe = window.api.on('theme:on-change', (next: unknown) => {
+      if (next === 'light' || next === 'dark') {
+        applyMode(next);
       }
     });
 
@@ -60,5 +63,5 @@ export const useTheme = () => {
     setSettings(newSettings);
   }, []);
 
-  return { theme, updateSettings };
+  return { theme, mode, updateSettings };
 };
