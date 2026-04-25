@@ -10,6 +10,8 @@ export const keybindingActions = [
   'view:toggle-edit',
   'view:toggle-toc',
   'help:show',
+  'nav:back',
+  'nav:forward',
 ] as const;
 
 export type KeybindingAction = (typeof keybindingActions)[number];
@@ -26,6 +28,8 @@ export const defaultKeybindings: Readonly<Record<KeybindingAction, string>> = {
   'view:toggle-edit': 'T',
   'view:toggle-toc': 'O',
   'help:show': 'CmdOrCtrl+/',
+  'nav:back': 'Ctrl+[',
+  'nav:forward': 'Ctrl+]',
 };
 
 export const mergeKeybindings = (

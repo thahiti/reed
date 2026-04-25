@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultKeybindings, mergeKeybindings } from '../../src/shared/keybindings';
+import { defaultKeybindings, keybindingActions, mergeKeybindings } from '../../src/shared/keybindings';
 import type { KeybindingAction } from '../../src/shared/keybindings';
 
 describe('keybindings', () => {
@@ -30,5 +30,15 @@ describe('keybindings', () => {
   it('should include file:copy-path with default C', () => {
     const result = mergeKeybindings(undefined);
     expect(result['file:copy-path']).toBe('C');
+  });
+
+  it('includes nav:back and nav:forward in actions', () => {
+    expect(keybindingActions).toContain('nav:back');
+    expect(keybindingActions).toContain('nav:forward');
+  });
+
+  it('defaults nav:back to Ctrl+[ and nav:forward to Ctrl+]', () => {
+    expect(defaultKeybindings['nav:back']).toBe('Ctrl+[');
+    expect(defaultKeybindings['nav:forward']).toBe('Ctrl+]');
   });
 });
