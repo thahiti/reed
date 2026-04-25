@@ -190,4 +190,38 @@ describe('useTabs', () => {
     expect(result.current.tabs[0]?.fileName).toBe('new-file.md');
     expect(result.current.tabs[0]?.modified).toBe(false);
   });
+
+  it('seeds a one-entry history on openTab', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.openTab('/path/a.md', 'a.md', '# A');
+    });
+    const tab = result.current.tabs[0];
+    expect(tab?.history).toEqual([{ filePath: '/path/a.md', topLine: 1 }]);
+    expect(tab?.historyIndex).toBe(0);
+  });
+
+  it('creates untitled tab with empty history', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.createNewTab();
+    });
+    const tab = result.current.tabs[0];
+    expect(tab?.history).toEqual([]);
+    expect(tab?.historyIndex).toBe(-1);
+  });
+
+  it('seeds history when promoting an untitled tab', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => {
+      result.current.createNewTab();
+    });
+    const tabId = result.current.tabs[0]?.id;
+    if (!tabId) throw new Error('tab not found');
+    act(() => {
+      result.current.promoteTab(tabId, '/path/new.md', 'new.md');
+    });
+    expect(result.current.tabs[0]?.history).toEqual([{ filePath: '/path/new.md', topLine: 1 }]);
+    expect(result.current.tabs[0]?.historyIndex).toBe(0);
+  });
 });

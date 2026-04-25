@@ -15,7 +15,15 @@ export const useTabs = () => {
         setActiveTabId(existing.id);
         return prev;
       }
-      const newTab: Tab = { id: generateId(), filePath, fileName, content, modified: false };
+      const newTab: Tab = {
+        id: generateId(),
+        filePath,
+        fileName,
+        content,
+        modified: false,
+        history: [{ filePath, topLine: 1 }],
+        historyIndex: 0,
+      };
       setActiveTabId(newTab.id);
       return [...prev, newTab];
     });
@@ -72,7 +80,15 @@ export const useTabs = () => {
         setActiveTabId(existing.id);
         return prev;
       }
-      const newTab: Tab = { id: generateId(), filePath: null, fileName: 'Untitled', content: '', modified: false };
+      const newTab: Tab = {
+        id: generateId(),
+        filePath: null,
+        fileName: 'Untitled',
+        content: '',
+        modified: false,
+        history: [],
+        historyIndex: -1,
+      };
       setActiveTabId(newTab.id);
       return [...prev, newTab];
     });
@@ -80,7 +96,18 @@ export const useTabs = () => {
 
   const promoteTab = useCallback((tabId: string, filePath: string, fileName: string) => {
     setTabs((prev) =>
-      prev.map((t) => (t.id === tabId ? { ...t, filePath, fileName, modified: false } : t)),
+      prev.map((t) =>
+        t.id === tabId
+          ? {
+              ...t,
+              filePath,
+              fileName,
+              modified: false,
+              history: [{ filePath, topLine: 1 }],
+              historyIndex: 0,
+            }
+          : t,
+      ),
     );
   }, []);
 
