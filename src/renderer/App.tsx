@@ -292,6 +292,11 @@ export const App: FC = () => {
         e.preventDefault();
         void handleGoBack();
       }
+      // Alternative back shortcut: Ctrl+T
+      if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        void handleGoBack();
+      }
       if (matchAccelerator(e, kb['nav:forward'], isMac)) {
         e.preventDefault();
         void handleGoForward();

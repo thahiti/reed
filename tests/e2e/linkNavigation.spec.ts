@@ -14,7 +14,7 @@ test.describe('Link navigation', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('.markdown-content');
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Nav A') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Nav A'),
     );
   });
 
@@ -26,7 +26,7 @@ test.describe('Link navigation', () => {
     const tabsBefore = await page.locator('.tab').count();
     await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     const tabsAfter = await page.locator('.tab').count();
     expect(tabsAfter).toBe(tabsBefore);
@@ -43,19 +43,31 @@ test.describe('Link navigation', () => {
     expect(inView).toBe(true);
   });
 
+  test('Ctrl+T also goes back as an alternative shortcut', async () => {
+    await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
+    await page.waitForFunction(
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
+    );
+    await page.keyboard.press('Control+t');
+    await page.waitForFunction(
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Filler paragraph'),
+    );
+    await expect(page.locator('.markdown-content')).toContainText('Nav A');
+  });
+
   test('Ctrl+[ goes back and Ctrl+] goes forward', async () => {
     await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     await page.keyboard.press('Control+BracketLeft');
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Some content for scroll testing') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Some content for scroll testing'),
     );
     await expect(page.locator('.markdown-content')).toContainText('Nav A');
     await page.keyboard.press('Control+BracketRight');
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     await expect(page.locator('.markdown-content')).toContainText('Nav B');
   });
@@ -63,15 +75,15 @@ test.describe('Link navigation', () => {
   test('navigating after a back truncates forward history', async () => {
     await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     await page.keyboard.press('Control+BracketLeft');
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Some content for scroll testing') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Some content for scroll testing'),
     );
     await page.locator('.markdown-content a.link', { hasText: 'B intro' }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     await page.keyboard.press('Control+BracketRight');
     // Forward should be NOOP — still on Nav B
@@ -102,7 +114,7 @@ test.describe('Link navigation', () => {
     // Navigate A -> B so we have history depth
     await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     // Enter edit mode and dirty the tab
     await page.keyboard.press('KeyT');
@@ -122,7 +134,7 @@ test.describe('Link navigation', () => {
   test('modified tab blocks Ctrl+[ back navigation', async () => {
     await page.locator('.markdown-content a.link', { hasText: /^B$/ }).click();
     await page.waitForFunction(
-      () => document.querySelector('.markdown-content')?.textContent?.includes('Intro Heading') ?? false,
+      () => (document.querySelector('.markdown-content')?.textContent ?? '').includes('Intro Heading'),
     );
     await page.keyboard.press('KeyT');
     await page.waitForSelector('.cm-content');
