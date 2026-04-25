@@ -14,9 +14,10 @@ import { defaultTocSettings } from '../shared/types/toc';
 import { mergeKeybindings } from '../shared/keybindings';
 import { matchAccelerator } from './matchAccelerator';
 import { NavigationContext } from './contexts/NavigationContext';
+import { ThemeModeProvider } from './contexts/ThemeModeContext';
 
 export const App: FC = () => {
-  const { theme, updateSettings } = useTheme();
+  const { theme, mode, updateSettings } = useTheme();
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
@@ -489,14 +490,15 @@ export const App: FC = () => {
     : 'app-content';
 
   return (
-    <div className="app">
-      <TabBar
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelect={setActiveTab}
-        onClose={(id) => { void handleCloseTab(id); }}
-        onNewTab={handleNewTab}
-      />
+    <ThemeModeProvider mode={mode}>
+      <div className="app">
+        <TabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelect={setActiveTab}
+          onClose={(id) => { void handleCloseTab(id); }}
+          onNewTab={handleNewTab}
+        />
       <main className={mainClassName}>
         {activeTab ? (
           isEditMode ? (
@@ -544,6 +546,7 @@ export const App: FC = () => {
         onClose={() => { setIsQuickOpenOpen(false); }}
         onSelect={(filePath) => { void handleOpenFile(filePath); }}
       />
-    </div>
+      </div>
+    </ThemeModeProvider>
   );
 };
