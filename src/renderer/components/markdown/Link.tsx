@@ -19,7 +19,18 @@ export const Link: FC<LinkProps> = ({ href, children }) => {
   const { onNavigate, flashTargetHref } = useContext(NavigationContext);
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>): void => {
-    if (isAnchor(href)) return;
+    if (isAnchor(href)) {
+      e.preventDefault();
+      const id = href.slice(1);
+      const target = document.getElementById(id);
+      if (target instanceof HTMLElement) {
+        const container = target.closest('.markdown-view');
+        if (container instanceof HTMLElement) {
+          container.scrollTop = target.offsetTop;
+        }
+      }
+      return;
+    }
     e.preventDefault();
     if (isExternalUrl(href)) {
       void window.api.invoke('file:open-external', href);

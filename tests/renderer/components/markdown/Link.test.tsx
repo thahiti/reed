@@ -40,13 +40,25 @@ describe('Link', () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it('does nothing for in-page anchors (no preventDefault, no onNavigate)', () => {
+  it('handles in-page anchors by scrolling the container without onNavigate', () => {
     const onNavigate = vi.fn();
+    // Construct a markdown-view container with a target element by id
+    const container = document.createElement('div');
+    container.className = 'markdown-view';
+    Object.defineProperty(container, 'offsetTop', { configurable: true, get: () => 0 });
+    const target = document.createElement('h2');
+    target.id = 'section';
+    Object.defineProperty(target, 'offsetTop', { configurable: true, get: () => 250 });
+    container.appendChild(target);
+    document.body.appendChild(container);
+
     renderWithNav('#section', 'Section', null, onNavigate);
-    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
-    screen.getByText('Section').dispatchEvent(clickEvent);
-    expect(clickEvent.defaultPrevented).toBe(false);
+    fireEvent.click(screen.getByText('Section'));
+
+    expect(container.scrollTop).toBe(250);
     expect(onNavigate).not.toHaveBeenCalled();
+
+    document.body.removeChild(container);
   });
 
   it('calls onNavigate for relative .md links', () => {
