@@ -1,8 +1,19 @@
 import { useState, useCallback } from 'react';
-import type { Tab } from '../../shared/types';
+import type { Tab, NavHistoryEntry } from '../../shared/types';
 
 let nextId = 0;
 const generateId = (): string => `tab-${String(++nextId)}`;
+
+export const peekBack = (tab: Tab): NavHistoryEntry | null => {
+  if (tab.historyIndex <= 0) return null;
+  return tab.history[tab.historyIndex - 1] ?? null;
+};
+
+export const peekForward = (tab: Tab): NavHistoryEntry | null => {
+  if (tab.historyIndex < 0) return null;
+  if (tab.historyIndex >= tab.history.length - 1) return null;
+  return tab.history[tab.historyIndex + 1] ?? null;
+};
 
 export const useTabs = () => {
   const [tabs, setTabs] = useState<ReadonlyArray<Tab>>([]);
@@ -145,7 +156,39 @@ export const useTabs = () => {
     [],
   );
 
+  const commitNavigateToIndex = useCallback(
+    (
+      tabId: string,
+      targetIndex: number,
+      content: string,
+      fileName: string,
+      currentTopLine: number,
+    ) => {
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          if (targetIndex < 0 || targetIndex >= t.history.length) return t;
+          const target = t.history[targetIndex];
+          if (!target) return t;
+          const patchedHistory = t.history.map((entry, idx) =>
+            idx === t.historyIndex ? { ...entry, topLine: currentTopLine } : entry,
+          );
+          return {
+            ...t,
+            filePath: target.filePath,
+            fileName,
+            content,
+            modified: false,
+            history: patchedHistory,
+            historyIndex: targetIndex,
+          };
+        }),
+      );
+    },
+    [],
+  );
+
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
-  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab };
+  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab, commitNavigateToIndex };
 };
