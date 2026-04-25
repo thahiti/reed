@@ -111,7 +111,41 @@ export const useTabs = () => {
     );
   }, []);
 
+  const navigateTab = useCallback(
+    (
+      tabId: string,
+      next: {
+        readonly filePath: string;
+        readonly fileName: string;
+        readonly content: string;
+        readonly anchorId?: string;
+      },
+      currentTopLine: number,
+    ) => {
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          if (t.historyIndex < 0) return t;
+          const retained = t.history.slice(0, t.historyIndex + 1).map((entry, idx) =>
+            idx === t.historyIndex ? { ...entry, topLine: currentTopLine } : entry,
+          );
+          const newEntry = { filePath: next.filePath, topLine: 1, anchorId: next.anchorId };
+          return {
+            ...t,
+            filePath: next.filePath,
+            fileName: next.fileName,
+            content: next.content,
+            modified: false,
+            history: [...retained, newEntry],
+            historyIndex: retained.length,
+          };
+        }),
+      );
+    },
+    [],
+  );
+
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
 
-  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab };
+  return { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab: setActiveTabId, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab };
 };
