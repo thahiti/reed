@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { processMarkdown } from '../../../src/renderer/pipeline/createProcessor';
+
+vi.mock('mermaid', () => ({
+  default: {
+    initialize: vi.fn(),
+    render: vi.fn().mockResolvedValue({ svg: '<svg>mocked</svg>' }),
+  },
+}));
 
 describe('createProcessor', () => {
   it('should convert heading to React element', () => {
@@ -96,5 +104,14 @@ describe('createProcessor', () => {
   it('should return empty headings when markdown has none', () => {
     const { headings } = processMarkdown('just text');
     expect(headings).toEqual([]);
+  });
+
+  it('should render mermaid code block as MermaidDiagram component', async () => {
+    const md = '```mermaid\ngraph TD;\nA-->B;\n```';
+    const { rendered } = processMarkdown(md);
+    render(rendered);
+    await waitFor(() => {
+      expect(screen.getByTestId('mermaid-diagram')).toBeInTheDocument();
+    });
   });
 });
