@@ -502,8 +502,10 @@ export const App: FC = () => {
           ) : (
             <NavigationContext.Provider value={{ onNavigate: handleNavigate, flashTargetHref }}>
               <MarkdownView
+                key={`${activeTab.id}-${String(activeTab.historyIndex)}`}
                 rendered={renderedMarkdown}
-                initialLine={topLineRef.current}
+                initialLine={activeTab.history[activeTab.historyIndex]?.topLine ?? 1}
+                initialAnchorId={activeTab.history[activeTab.historyIndex]?.anchorId}
                 scrollSettings={settings.scroll}
                 onTopLineChange={(line) => { topLineRef.current = line; }}
               />
