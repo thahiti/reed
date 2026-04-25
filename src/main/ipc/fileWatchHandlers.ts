@@ -19,27 +19,47 @@ export const createFileWatcher = (): FileWatcher => {
     });
   };
 
-  const watchFile = (filePath: string): void => {
-    if (watchers.has(filePath)) return;
-    if (!existsSync(filePath)) return;
+  const scheduleNotify = (filePath: string): void => {
+    const existing = debounceTimers.get(filePath);
+    if (existing) clearTimeout(existing);
+    debounceTimers.set(
+      filePath,
+      setTimeout(() => {
+        debounceTimers.delete(filePath);
+        if (existsSync(filePath)) {
+          notifyRenderer(filePath);
+        }
+      }, 300)
+    );
+  };
 
+  const startWatcher = (filePath: string): void => {
+    if (!existsSync(filePath)) return;
     const fsWatcher = watch(filePath, (eventType) => {
       if (eventType === 'change') {
-        const existing = debounceTimers.get(filePath);
-        if (existing) clearTimeout(existing);
-        debounceTimers.set(
-          filePath,
-          setTimeout(() => {
-            debounceTimers.delete(filePath);
-            if (existsSync(filePath)) {
-              notifyRenderer(filePath);
-            }
-          }, 300)
-        );
+        scheduleNotify(filePath);
+        return;
       }
+      // eventType === 'rename'.
+      // Atomic save (write tmp + rename onto target) replaces the inode, so
+      // the original watcher is dead. Close it, give the rename a brief moment
+      // to settle, then re-attach to the same path. Notify the renderer so it
+      // re-reads, since rename-onto means content changed.
+      fsWatcher.close();
+      watchers.delete(filePath);
+      setTimeout(() => {
+        if (existsSync(filePath)) {
+          startWatcher(filePath);
+          notifyRenderer(filePath);
+        }
+      }, 100);
     });
-
     watchers.set(filePath, fsWatcher);
+  };
+
+  const watchFile = (filePath: string): void => {
+    if (watchers.has(filePath)) return;
+    startWatcher(filePath);
   };
 
   const unwatchFile = (filePath: string): void => {
