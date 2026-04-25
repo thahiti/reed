@@ -21,4 +21,16 @@ describe('toAnchorId', () => {
   it('preserves underscores', () => {
     expect(toAnchorId('snake_case_text')).toBe('snake_case_text');
   });
+
+  it('preserves Korean characters', () => {
+    expect(toAnchorId('1. 문서 개요')).toBe('1-문서-개요');
+  });
+
+  it('preserves Korean with mixed Latin in parens', () => {
+    expect(toAnchorId('3. 정상 상태 기준 (Baseline)')).toBe('3-정상-상태-기준-baseline');
+  });
+
+  it('preserves CJK characters', () => {
+    expect(toAnchorId('日本語 테스트')).toBe('日本語-테스트');
+  });
 });
