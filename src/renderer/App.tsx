@@ -13,17 +13,33 @@ import { TocOverlay } from './components/TocOverlay';
 import { defaultTocSettings } from '../shared/types/toc';
 import { mergeKeybindings } from '../shared/keybindings';
 import { matchAccelerator } from './matchAccelerator';
+import { NavigationContext } from './contexts/NavigationContext';
 
 export const App: FC = () => {
   const { theme, updateSettings } = useTheme();
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab } = useTabs();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [tocVisible, setTocVisible] = useState(false);
+  const [flashTargetHref, setFlashTargetHref] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const topLineRef = useRef(1);
+
+  const triggerFlash = useCallback((href: string) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlashTargetHref(href);
+    flashTimerRef.current = setTimeout(() => {
+      setFlashTargetHref(null);
+      flashTimerRef.current = null;
+    }, 200);
+  }, []);
+
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+  }, []);
   const tocInitializedRef = useRef(false);
   const { rendered: renderedMarkdown, headings: markdownHeadings } = useMarkdown(
     activeTab?.content ?? '',
@@ -51,6 +67,34 @@ export const App: FC = () => {
     void window.api.invoke('file:watch', filePath);
     await window.api.invoke('history:add', filePath);
   }, [openTab]);
+
+  const handleNavigate = useCallback((href: string) => {
+    void (async () => {
+      if (!activeTab || !activeTab.filePath) {
+        triggerFlash(href);
+        return;
+      }
+      if (activeTab.modified) {
+        triggerFlash(href);
+        return;
+      }
+      const hashIdx = href.indexOf('#');
+      const relPath = hashIdx === -1 ? href : href.slice(0, hashIdx);
+      const anchorId = hashIdx === -1 ? undefined : href.slice(hashIdx + 1);
+      try {
+        const absPath = await window.api.invoke('file:resolve-path', activeTab.filePath, relPath);
+        const content = await window.api.invoke('file:read', absPath);
+        const parts = absPath.split('/');
+        const fileName = parts[parts.length - 1] ?? absPath;
+        navigateTab(activeTab.id, { filePath: absPath, fileName, content, anchorId }, topLineRef.current);
+        void window.api.invoke('file:watch', absPath);
+        await window.api.invoke('history:add', absPath);
+      } catch (err) {
+        console.warn('[mdlink] navigation failed', href, err);
+        triggerFlash(href);
+      }
+    })();
+  }, [activeTab, navigateTab, triggerFlash]);
 
   const handleFileOpenDialog = useCallback(async () => {
     const filePath = await window.api.invoke('file:open-dialog');
@@ -418,12 +462,14 @@ export const App: FC = () => {
               onTopLineChange={(line) => { topLineRef.current = line; }}
             />
           ) : (
-            <MarkdownView
-              rendered={renderedMarkdown}
-              initialLine={topLineRef.current}
-              scrollSettings={settings.scroll}
-              onTopLineChange={(line) => { topLineRef.current = line; }}
-            />
+            <NavigationContext.Provider value={{ onNavigate: handleNavigate, flashTargetHref }}>
+              <MarkdownView
+                rendered={renderedMarkdown}
+                initialLine={topLineRef.current}
+                scrollSettings={settings.scroll}
+                onTopLineChange={(line) => { topLineRef.current = line; }}
+              />
+            </NavigationContext.Provider>
           )
         ) : (
           <Welcome />
