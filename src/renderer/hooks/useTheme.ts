@@ -5,8 +5,7 @@ import { applyTheme } from '../themes/applyTheme';
 import type { Theme } from '../themes/types';
 import type { AppSettings, ThemeOverrides } from '../../shared/types';
 import { getBodyFontFamily, getCodeFontFamily, defaultBodyFontId, defaultCodeFontId } from '../../shared/fonts';
-
-type ThemeMode = 'light' | 'dark';
+import type { ThemeMode } from '../contexts/ThemeModeContext';
 
 const themeMap = { light: lightTheme, dark: darkTheme } as const;
 
