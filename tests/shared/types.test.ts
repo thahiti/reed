@@ -1,5 +1,5 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { IpcChannels, HistoryEntry, Tab, TabState, AppSettings } from '../src/shared/types';
+import type { IpcChannels, HistoryEntry, NavHistoryEntry, Tab, TabState, AppSettings } from '../src/shared/types';
 
 describe('Shared Types', () => {
   it('IpcChannels should have file:read channel', () => {
@@ -40,5 +40,21 @@ describe('Shared Types', () => {
   it('should allow AppSettings without bodyFont and codeFont', () => {
     expectTypeOf<AppSettings['bodyFont']>().toEqualTypeOf<string | undefined>();
     expectTypeOf<AppSettings['codeFont']>().toEqualTypeOf<string | undefined>();
+  });
+
+  it('NavHistoryEntry should have required fields and optional anchorId', () => {
+    expectTypeOf<NavHistoryEntry>().toHaveProperty('filePath');
+    expectTypeOf<NavHistoryEntry>().toHaveProperty('topLine');
+    expectTypeOf<NavHistoryEntry>().toHaveProperty('anchorId');
+    expectTypeOf<NavHistoryEntry['filePath']>().toEqualTypeOf<string>();
+    expectTypeOf<NavHistoryEntry['topLine']>().toEqualTypeOf<number>();
+    expectTypeOf<NavHistoryEntry['anchorId']>().toEqualTypeOf<string | undefined>();
+  });
+
+  it('Tab should have history stack and historyIndex', () => {
+    expectTypeOf<Tab>().toHaveProperty('history');
+    expectTypeOf<Tab>().toHaveProperty('historyIndex');
+    expectTypeOf<Tab['history']>().toEqualTypeOf<ReadonlyArray<NavHistoryEntry>>();
+    expectTypeOf<Tab['historyIndex']>().toEqualTypeOf<number>();
   });
 });
