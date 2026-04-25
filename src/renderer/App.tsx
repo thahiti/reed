@@ -1,6 +1,6 @@
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from './hooks/useTheme';
-import { useTabs } from './hooks/useTabs';
+import { useTabs, peekBack, peekForward } from './hooks/useTabs';
 import { TabBar } from './components/TabBar';
 import { MarkdownView } from './components/MarkdownView';
 import { MarkdownEditor } from './components/MarkdownEditor';
@@ -20,7 +20,7 @@ export const App: FC = () => {
   const settings = useSettings();
   const kb = mergeKeybindings(settings.keybindings);
   const isMac = navigator.userAgent.includes('Macintosh');
-  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab } = useTabs();
+  const { tabs, activeTabId, activeTab, openTab, closeTab, setActiveTab, updateTabContent, markTabSaved, reloadTab, forceReloadTab, createNewTab, promoteTab, navigateTab, commitNavigateToIndex } = useTabs();
   const [isQuickOpenOpen, setIsQuickOpenOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [tocVisible, setTocVisible] = useState(false);
@@ -95,6 +95,36 @@ export const App: FC = () => {
       }
     })();
   }, [activeTab, navigateTab, triggerFlash]);
+
+  const handleGoBack = useCallback(async () => {
+    if (!activeTab || activeTab.modified) return;
+    const target = peekBack(activeTab);
+    if (!target) return;
+    try {
+      const content = await window.api.invoke('file:read', target.filePath);
+      const parts = target.filePath.split('/');
+      const fileName = parts[parts.length - 1] ?? target.filePath;
+      commitNavigateToIndex(activeTab.id, activeTab.historyIndex - 1, content, fileName, topLineRef.current);
+      void window.api.invoke('file:watch', target.filePath);
+    } catch (err) {
+      console.warn('[mdlink] goBack failed', target.filePath, err);
+    }
+  }, [activeTab, commitNavigateToIndex]);
+
+  const handleGoForward = useCallback(async () => {
+    if (!activeTab || activeTab.modified) return;
+    const target = peekForward(activeTab);
+    if (!target) return;
+    try {
+      const content = await window.api.invoke('file:read', target.filePath);
+      const parts = target.filePath.split('/');
+      const fileName = parts[parts.length - 1] ?? target.filePath;
+      commitNavigateToIndex(activeTab.id, activeTab.historyIndex + 1, content, fileName, topLineRef.current);
+      void window.api.invoke('file:watch', target.filePath);
+    } catch (err) {
+      console.warn('[mdlink] goForward failed', target.filePath, err);
+    }
+  }, [activeTab, commitNavigateToIndex]);
 
   const handleFileOpenDialog = useCallback(async () => {
     const filePath = await window.api.invoke('file:open-dialog');
@@ -258,10 +288,18 @@ export const App: FC = () => {
         const nextTab = tabs[currentIndex + 1];
         if (nextTab) setActiveTab(nextTab.id);
       }
+      if (matchAccelerator(e, kb['nav:back'], isMac)) {
+        e.preventDefault();
+        void handleGoBack();
+      }
+      if (matchAccelerator(e, kb['nav:forward'], isMac)) {
+        e.preventDefault();
+        void handleGoForward();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown); };
-  }, [tabs, activeTabId, activeTab, setActiveTab, handleFileOpenDialog, handleSave, handleNewTab, isEditMode, kb, isMac]);
+  }, [tabs, activeTabId, activeTab, setActiveTab, handleFileOpenDialog, handleSave, handleNewTab, isEditMode, kb, isMac, handleGoBack, handleGoForward]);
 
   // Drag & Drop
   useEffect(() => {
