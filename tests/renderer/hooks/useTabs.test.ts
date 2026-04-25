@@ -225,3 +225,70 @@ describe('useTabs', () => {
     expect(result.current.tabs[0]?.historyIndex).toBe(0);
   });
 });
+
+describe('useTabs.navigateTab', () => {
+  it('pushes a new history entry and advances historyIndex', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id;
+    if (!tabId) throw new Error('tab not found');
+    act(() => {
+      result.current.navigateTab(
+        tabId,
+        { filePath: '/b.md', fileName: 'b.md', content: '# B' },
+        10,
+      );
+    });
+    const tab = result.current.tabs[0];
+    expect(tab?.filePath).toBe('/b.md');
+    expect(tab?.fileName).toBe('b.md');
+    expect(tab?.content).toBe('# B');
+    expect(tab?.history.length).toBe(2);
+    expect(tab?.history[0]).toEqual({ filePath: '/a.md', topLine: 10 });
+    expect(tab?.history[1]).toEqual({ filePath: '/b.md', topLine: 1 });
+    expect(tab?.historyIndex).toBe(1);
+  });
+
+  it('carries anchorId into the new history entry', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.navigateTab(
+        tabId,
+        { filePath: '/b.md', fileName: 'b.md', content: '# B', anchorId: 'intro' },
+        0,
+      );
+    });
+    expect(result.current.tabs[0]?.history[1]?.anchorId).toBe('intro');
+  });
+
+  it('appends history linearly across multiple navigates', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.navigateTab(tabId, { filePath: '/b.md', fileName: 'b.md', content: '# B' }, 0);
+      result.current.navigateTab(tabId, { filePath: '/c.md', fileName: 'c.md', content: '# C' }, 0);
+      result.current.navigateTab(tabId, { filePath: '/d.md', fileName: 'd.md', content: '# D' }, 0);
+    });
+    expect(result.current.tabs[0]?.history.length).toBe(4);
+    expect(result.current.tabs[0]?.historyIndex).toBe(3);
+  });
+
+  it('is a NOOP for untitled tabs', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.createNewTab(); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.navigateTab(
+        tabId,
+        { filePath: '/b.md', fileName: 'b.md', content: '# B' },
+        0,
+      );
+    });
+    expect(result.current.tabs[0]?.filePath).toBeNull();
+    expect(result.current.tabs[0]?.history).toEqual([]);
+    expect(result.current.tabs[0]?.historyIndex).toBe(-1);
+  });
+});
