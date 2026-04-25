@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useTabs } from '../../../src/renderer/hooks/useTabs';
+import { useTabs, peekBack, peekForward } from '../../../src/renderer/hooks/useTabs';
+import type { Tab } from '../../../src/shared/types';
 
 describe('useTabs', () => {
   it('should start with no tabs', () => {
@@ -290,5 +291,106 @@ describe('useTabs.navigateTab', () => {
     expect(result.current.tabs[0]?.filePath).toBeNull();
     expect(result.current.tabs[0]?.history).toEqual([]);
     expect(result.current.tabs[0]?.historyIndex).toBe(-1);
+  });
+});
+
+describe('peekBack / peekForward', () => {
+  const makeTab = (
+    history: ReadonlyArray<{ filePath: string; topLine: number; anchorId?: string }>,
+    historyIndex: number,
+  ): Tab => ({
+    id: 't1',
+    filePath: history[historyIndex]?.filePath ?? null,
+    fileName: 'f',
+    content: '',
+    modified: false,
+    history,
+    historyIndex,
+  });
+
+  it('peekBack returns previous entry when available', () => {
+    const tab = makeTab(
+      [{ filePath: '/a.md', topLine: 5 }, { filePath: '/b.md', topLine: 0 }],
+      1,
+    );
+    expect(peekBack(tab)).toEqual({ filePath: '/a.md', topLine: 5 });
+  });
+
+  it('peekBack returns null at index 0', () => {
+    const tab = makeTab([{ filePath: '/a.md', topLine: 0 }], 0);
+    expect(peekBack(tab)).toBeNull();
+  });
+
+  it('peekBack returns null for untitled tab (historyIndex -1)', () => {
+    const tab = makeTab([], -1);
+    expect(peekBack(tab)).toBeNull();
+  });
+
+  it('peekForward returns next entry when available', () => {
+    const tab = makeTab(
+      [{ filePath: '/a.md', topLine: 0 }, { filePath: '/b.md', topLine: 0 }],
+      0,
+    );
+    expect(peekForward(tab)).toEqual({ filePath: '/b.md', topLine: 0 });
+  });
+
+  it('peekForward returns null at last index', () => {
+    const tab = makeTab([{ filePath: '/a.md', topLine: 0 }], 0);
+    expect(peekForward(tab)).toBeNull();
+  });
+});
+
+describe('useTabs.commitNavigateToIndex', () => {
+  it('moves historyIndex and replaces content/filePath/fileName', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.navigateTab(
+        tabId,
+        { filePath: '/b.md', fileName: 'b.md', content: '# B' },
+        12,
+      );
+    });
+    act(() => {
+      result.current.commitNavigateToIndex(tabId, 0, '# A reloaded', 'a.md', 3);
+    });
+    const tab = result.current.tabs[0];
+    expect(tab?.historyIndex).toBe(0);
+    expect(tab?.filePath).toBe('/a.md');
+    expect(tab?.fileName).toBe('a.md');
+    expect(tab?.content).toBe('# A reloaded');
+    expect(tab?.history[1]?.topLine).toBe(3);
+    expect(tab?.history[0]?.topLine).toBe(12);
+  });
+
+  it('is a NOOP when target index is out of range', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.commitNavigateToIndex(tabId, 5, 'X', 'x.md', 0);
+    });
+    expect(result.current.tabs[0]?.filePath).toBe('/a.md');
+    expect(result.current.tabs[0]?.historyIndex).toBe(0);
+  });
+
+  it('truncates forward history when navigating after back', () => {
+    const { result } = renderHook(() => useTabs());
+    act(() => { result.current.openTab('/a.md', 'a.md', '# A'); });
+    const tabId = result.current.tabs[0]?.id ?? '';
+    act(() => {
+      result.current.navigateTab(tabId, { filePath: '/b.md', fileName: 'b.md', content: '# B' }, 0);
+      result.current.navigateTab(tabId, { filePath: '/c.md', fileName: 'c.md', content: '# C' }, 0);
+    });
+    act(() => {
+      result.current.commitNavigateToIndex(tabId, 1, '# B', 'b.md', 0);
+    });
+    act(() => {
+      result.current.navigateTab(tabId, { filePath: '/d.md', fileName: 'd.md', content: '# D' }, 0);
+    });
+    expect(result.current.tabs[0]?.history.length).toBe(3);
+    expect(result.current.tabs[0]?.historyIndex).toBe(2);
+    expect(result.current.tabs[0]?.history[2]?.filePath).toBe('/d.md');
   });
 });
