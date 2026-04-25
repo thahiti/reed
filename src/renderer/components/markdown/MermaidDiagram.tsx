@@ -1,5 +1,6 @@
-import { type FC, useEffect, useRef, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import mermaid from 'mermaid';
+import { useThemeMode } from '../../contexts/ThemeModeContext';
 
 type MermaidDiagramProps = {
   readonly chart: string;
@@ -8,23 +9,26 @@ type MermaidDiagramProps = {
 let mermaidId = 0;
 
 export const MermaidDiagram: FC<MermaidDiagramProps> = ({ chart }) => {
+  const mode = useThemeMode();
   const [svg, setSvg] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: mode === 'dark' ? 'dark' : 'default',
+      securityLevel: 'strict',
+    });
 
     const id = `mermaid-${String(++mermaidId)}`;
     void mermaid.render(id, chart).then(({ svg: rendered }) => {
       setSvg(rendered);
     });
-  }, [chart]);
+  }, [chart, mode]);
 
   return (
     <div
       className="mermaid-diagram"
       data-testid="mermaid-diagram"
-      ref={containerRef}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
