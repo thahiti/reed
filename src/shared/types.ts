@@ -28,12 +28,20 @@ export type HistoryEntry = {
   readonly openedAt: string;
 };
 
+export type NavHistoryEntry = {
+  readonly filePath: string;
+  readonly topLine: number;
+  readonly anchorId?: string;
+};
+
 export type Tab = {
   readonly id: string;
   readonly filePath: string | null;
   readonly fileName: string;
   readonly content: string;
   readonly modified: boolean;
+  readonly history: ReadonlyArray<NavHistoryEntry>;
+  readonly historyIndex: number;
 };
 
 export type TabState = {
