@@ -40,25 +40,39 @@ describe('Link', () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it('handles in-page anchors by scrolling the container without onNavigate', () => {
+  it('handles in-page anchors by calling scrollIntoView without onNavigate', () => {
     const onNavigate = vi.fn();
-    // Construct a markdown-view container with a target element by id
-    const container = document.createElement('div');
-    container.className = 'markdown-view';
-    Object.defineProperty(container, 'offsetTop', { configurable: true, get: () => 0 });
     const target = document.createElement('h2');
     target.id = 'section';
-    Object.defineProperty(target, 'offsetTop', { configurable: true, get: () => 250 });
-    container.appendChild(target);
-    document.body.appendChild(container);
+    const scrollIntoView = vi.fn();
+    target.scrollIntoView = scrollIntoView;
+    document.body.appendChild(target);
 
     renderWithNav('#section', 'Section', null, onNavigate);
     fireEvent.click(screen.getByText('Section'));
 
-    expect(container.scrollTop).toBe(250);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
     expect(onNavigate).not.toHaveBeenCalled();
 
-    document.body.removeChild(container);
+    document.body.removeChild(target);
+  });
+
+  it('decodes percent-encoded anchor (Korean) before getElementById lookup', () => {
+    const onNavigate = vi.fn();
+    const target = document.createElement('h2');
+    target.id = '1-문서-개요';
+    const scrollIntoView = vi.fn();
+    target.scrollIntoView = scrollIntoView;
+    document.body.appendChild(target);
+
+    // Simulates the percent-encoded href that micromark produces for Korean
+    renderWithNav('#1-%EB%AC%B8%EC%84%9C-%EA%B0%9C%EC%9A%94', '문서 개요', null, onNavigate);
+    fireEvent.click(screen.getByText('문서 개요'));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+    expect(onNavigate).not.toHaveBeenCalled();
+
+    document.body.removeChild(target);
   });
 
   it('calls onNavigate for relative .md links', () => {

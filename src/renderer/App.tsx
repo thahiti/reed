@@ -80,7 +80,11 @@ export const App: FC = () => {
       }
       const hashIdx = href.indexOf('#');
       const relPath = hashIdx === -1 ? href : href.slice(0, hashIdx);
-      const anchorId = hashIdx === -1 ? undefined : href.slice(hashIdx + 1);
+      const rawAnchor = hashIdx === -1 ? undefined : href.slice(hashIdx + 1);
+      let anchorId = rawAnchor;
+      if (rawAnchor !== undefined) {
+        try { anchorId = decodeURIComponent(rawAnchor); } catch { anchorId = rawAnchor; }
+      }
       try {
         const absPath = await window.api.invoke('file:resolve-path', activeTab.filePath, relPath);
         const content = await window.api.invoke('file:read', absPath);
