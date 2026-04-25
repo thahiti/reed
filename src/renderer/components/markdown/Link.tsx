@@ -15,19 +15,20 @@ const isMarkdownLink = (href: string): boolean => {
   return pathPart.endsWith('.md') || pathPart.endsWith('.markdown');
 };
 
+const safeDecode = (s: string): string => {
+  try { return decodeURIComponent(s); } catch { return s; }
+};
+
 export const Link: FC<LinkProps> = ({ href, children }) => {
   const { onNavigate, flashTargetHref } = useContext(NavigationContext);
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>): void => {
     if (isAnchor(href)) {
       e.preventDefault();
-      const id = href.slice(1);
+      const id = safeDecode(href.slice(1));
       const target = document.getElementById(id);
       if (target instanceof HTMLElement) {
-        const container = target.closest('.markdown-view');
-        if (container instanceof HTMLElement) {
-          container.scrollTop = target.offsetTop;
-        }
+        target.scrollIntoView({ block: 'start' });
       }
       return;
     }
