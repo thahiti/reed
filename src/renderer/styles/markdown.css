@@ -132,3 +132,20 @@
   margin-right: 4px;
   margin-bottom: 2px;
 }
+
+.link.link-flash {
+  animation: link-flash-anim 200ms ease-out;
+}
+
+@keyframes link-flash-anim {
+  0% {
+    outline: 2px solid #e74c3c;
+    outline-offset: 2px;
+    background-color: rgba(231, 76, 60, 0.15);
+  }
+  100% {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    background-color: transparent;
+  }
+}
