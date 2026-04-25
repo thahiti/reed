@@ -78,6 +78,19 @@ test.describe('Link navigation', () => {
     await expect(page.locator('.markdown-content')).toContainText('Nav B');
   });
 
+  test('in-page anchor link scrolls within the markdown container', async () => {
+    const beforeScroll = await page.locator('.markdown-view').evaluate((el) => el.scrollTop);
+    await page.locator('.markdown-content a.link', { hasText: 'Section' }).first().click();
+    await page.waitForTimeout(100);
+    const afterScroll = await page.locator('.markdown-view').evaluate((el) => el.scrollTop);
+    expect(afterScroll).toBeGreaterThan(beforeScroll);
+    const inView = await page.locator('#section').evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return rect.top >= 0 && rect.top < window.innerHeight;
+    });
+    expect(inView).toBe(true);
+  });
+
   test('broken link flashes red and does not navigate', async () => {
     const linkLocator = page.locator('.markdown-content a.link', { hasText: 'missing' });
     await linkLocator.click();
