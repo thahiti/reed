@@ -71,4 +71,14 @@ describe('MermaidDiagram', () => {
     });
     expect(renderMock).toHaveBeenCalled();
   });
+
+  it('should render error box with source when mermaid.render rejects', async () => {
+    renderMock.mockRejectedValueOnce(new Error('Parse error: bad syntax'));
+    render(<MermaidDiagram chart="graph !!!" />);
+    await waitFor(() => {
+      expect(screen.getByTestId('mermaid-error')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('mermaid-error').textContent).toContain('Parse error: bad syntax');
+    expect(screen.getByTestId('mermaid-error').textContent).toContain('graph !!!');
+  });
 });
