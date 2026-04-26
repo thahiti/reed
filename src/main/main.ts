@@ -33,6 +33,7 @@ const createWindow = (): BrowserWindow => {
   }
 
   win.webContents.on('did-finish-load', () => {
+    void win.webContents.setVisualZoomLevelLimits(1, 5);
     openFileQueue.setSender((filePath) => {
       if (!win.isDestroyed()) {
         win.webContents.send('app:open-file', filePath);
