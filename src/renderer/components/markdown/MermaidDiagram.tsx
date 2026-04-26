@@ -18,6 +18,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ chart }) => {
   const [state, setState] = useState<State>({ status: 'pending' });
 
   useEffect(() => {
+    setState({ status: 'pending' });
     mermaid.initialize({
       startOnLoad: false,
       theme: mode === 'dark' ? 'dark' : 'default',
