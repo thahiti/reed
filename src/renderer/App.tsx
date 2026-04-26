@@ -499,53 +499,53 @@ export const App: FC = () => {
           onClose={(id) => { void handleCloseTab(id); }}
           onNewTab={handleNewTab}
         />
-      <main className={mainClassName}>
-        {activeTab ? (
-          isEditMode ? (
-            <MarkdownEditor
-              content={activeTab.content}
-              isDark={isDark}
-              initialLine={topLineRef.current}
-              onChange={handleEditorChange}
-              onSave={() => { void handleSave(); }}
-              onTopLineChange={(line) => { topLineRef.current = line; }}
-            />
-          ) : (
-            <NavigationContext.Provider value={{ onNavigate: handleNavigate, flashTargetHref }}>
-              <MarkdownView
-                key={`${activeTab.id}-${String(activeTab.historyIndex)}`}
-                rendered={renderedMarkdown}
-                initialLine={activeTab.history[activeTab.historyIndex]?.topLine ?? 1}
-                initialAnchorId={activeTab.history[activeTab.historyIndex]?.anchorId}
-                scrollSettings={settings.scroll}
+        <main className={mainClassName}>
+          {activeTab ? (
+            isEditMode ? (
+              <MarkdownEditor
+                content={activeTab.content}
+                isDark={isDark}
+                initialLine={topLineRef.current}
+                onChange={handleEditorChange}
+                onSave={() => { void handleSave(); }}
                 onTopLineChange={(line) => { topLineRef.current = line; }}
               />
-            </NavigationContext.Provider>
-          )
-        ) : (
-          <Welcome />
+            ) : (
+              <NavigationContext.Provider value={{ onNavigate: handleNavigate, flashTargetHref }}>
+                <MarkdownView
+                  key={`${activeTab.id}-${String(activeTab.historyIndex)}`}
+                  rendered={renderedMarkdown}
+                  initialLine={activeTab.history[activeTab.historyIndex]?.topLine ?? 1}
+                  initialAnchorId={activeTab.history[activeTab.historyIndex]?.anchorId}
+                  scrollSettings={settings.scroll}
+                  onTopLineChange={(line) => { topLineRef.current = line; }}
+                />
+              </NavigationContext.Provider>
+            )
+          ) : (
+            <Welcome />
+          )}
+          {activeTab && !isEditMode && tocVisible && (
+            <TocOverlay
+              headings={filteredHeadings}
+              activeId={activeHeadingId}
+              position={tocConfig.position}
+              onItemClick={handleTocItemClick}
+            />
+          )}
+        </main>
+        {activeTab && (
+          <div className="mode-indicator">
+            <span className={`mode-indicator-dot ${isEditMode ? 'mode-indicator-dot-edit' : 'mode-indicator-dot-read'}`} />
+            {isEditMode ? 'Edit' : 'Read'}
+            {activeTab.modified && <span className="mode-indicator-modified">●</span>}
+          </div>
         )}
-        {activeTab && !isEditMode && tocVisible && (
-          <TocOverlay
-            headings={filteredHeadings}
-            activeId={activeHeadingId}
-            position={tocConfig.position}
-            onItemClick={handleTocItemClick}
-          />
-        )}
-      </main>
-      {activeTab && (
-        <div className="mode-indicator">
-          <span className={`mode-indicator-dot ${isEditMode ? 'mode-indicator-dot-edit' : 'mode-indicator-dot-read'}`} />
-          {isEditMode ? 'Edit' : 'Read'}
-          {activeTab.modified && <span className="mode-indicator-modified">●</span>}
-        </div>
-      )}
-      <QuickOpen
-        isOpen={isQuickOpenOpen}
-        onClose={() => { setIsQuickOpenOpen(false); }}
-        onSelect={(filePath) => { void handleOpenFile(filePath); }}
-      />
+        <QuickOpen
+          isOpen={isQuickOpenOpen}
+          onClose={() => { setIsQuickOpenOpen(false); }}
+          onSelect={(filePath) => { void handleOpenFile(filePath); }}
+        />
       </div>
     </ThemeModeProvider>
   );
