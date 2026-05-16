@@ -10,8 +10,10 @@ import './styles/editor.css';
 import './styles/search.css';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { PrintView } from './components/PrintView';
 
 const root = document.getElementById('root');
 if (root) {
-  createRoot(root).render(<App />);
+  const isPrint = window.location.hash.startsWith('#print');
+  createRoot(root).render(isPrint ? <PrintView /> : <App />);
 }
