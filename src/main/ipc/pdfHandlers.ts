@@ -5,7 +5,7 @@ import { derivePdfName } from './pdfName';
 
 const PRINT_READY_TIMEOUT_MS = 15_000;
 
-let resolvePrintReady: (() => void) | null = null;
+const pendingReady = new Map<number, () => void>();
 
 const createPrintWindow = (): BrowserWindow =>
   new BrowserWindow({
@@ -32,8 +32,8 @@ const loadPrintEntry = async (
 };
 
 export const registerPdfHandlers = (): void => {
-  ipcMain.handle('pdf:print-ready', () => {
-    resolvePrintReady?.();
+  ipcMain.handle('pdf:print-ready', (event) => {
+    pendingReady.get(event.sender.id)?.();
   });
 
   ipcMain.handle('pdf:export', async (_event, filePath: string) => {
@@ -52,9 +52,11 @@ export const registerPdfHandlers = (): void => {
     const target = result.filePath;
 
     const printWin = createPrintWindow();
+    const webContentsId = printWin.webContents.id;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const ready = new Promise<void>((resolve, reject) => {
-      resolvePrintReady = resolve;
-      setTimeout(
+      pendingReady.set(webContentsId, resolve);
+      timeoutId = setTimeout(
         () => { reject(new Error('PDF render timed out')); },
         PRINT_READY_TIMEOUT_MS,
       );
@@ -63,6 +65,7 @@ export const registerPdfHandlers = (): void => {
     try {
       await loadPrintEntry(printWin, filePath);
       await ready;
+      // printToPDF emits no header/footer by default — matches the spec.
       const pdf = await printWin.webContents.printToPDF({
         printBackground: true,
         pageSize: 'A4',
@@ -76,7 +79,8 @@ export const registerPdfHandlers = (): void => {
       );
       return { ok: false as const, reason: 'failed' };
     } finally {
-      resolvePrintReady = null;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+      pendingReady.delete(webContentsId);
       if (!printWin.isDestroyed()) printWin.destroy();
     }
   });
