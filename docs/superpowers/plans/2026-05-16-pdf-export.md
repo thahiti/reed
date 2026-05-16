@@ -126,8 +126,8 @@ add:
 
 - [ ] **Step 2: Verify type-check passes**
 
-Run: `pnpm exec tsc -p tsconfig.node.json --noEmit && pnpm exec tsc -p tsconfig.web.json --noEmit`
-Expected: no errors.
+Run: `pnpm build`
+Expected: build succeeds with no type errors (electron-vite type-checks main + renderer). Do NOT use `tsc -p tsconfig.*.json --noEmit` — those configs use include patterns and standalone runs surface unrelated pre-existing TS6307 noise.
 
 - [ ] **Step 3: Commit**
 
@@ -256,8 +256,8 @@ In the `app.whenReady().then(() => {` block, after line 64
 
 - [ ] **Step 3: Verify type-check passes**
 
-Run: `pnpm exec tsc -p tsconfig.node.json --noEmit`
-Expected: no errors.
+Run: `pnpm build`
+Expected: build succeeds with no type errors (electron-vite type-checks). Do NOT use `tsc -p tsconfig.node.json --noEmit` (unreliable here).
 
 - [ ] **Step 4: Lint**
 
@@ -421,8 +421,8 @@ export const PrintView = (): ReactElement => {
 
 - [ ] **Step 2: Verify type-check passes**
 
-Run: `pnpm exec tsc -p tsconfig.web.json --noEmit`
-Expected: no errors.
+Run: `pnpm build`
+Expected: build succeeds with no type errors (electron-vite type-checks). Do NOT use `tsc -p tsconfig.web.json --noEmit` (unreliable here).
 
 - [ ] **Step 3: Lint**
 
@@ -473,8 +473,8 @@ if (root) {
 
 - [ ] **Step 2: Verify type-check passes**
 
-Run: `pnpm exec tsc -p tsconfig.web.json --noEmit`
-Expected: no errors.
+Run: `pnpm build`
+Expected: build succeeds with no type errors (electron-vite type-checks). Do NOT use `tsc -p tsconfig.web.json --noEmit` (unreliable here).
 
 - [ ] **Step 3: Lint**
 
@@ -539,8 +539,8 @@ In `src/renderer/App.tsx`, immediately after the `menu:save` effect that ends at
 
 - [ ] **Step 3: Verify type-check passes**
 
-Run: `pnpm exec tsc -p tsconfig.node.json --noEmit && pnpm exec tsc -p tsconfig.web.json --noEmit`
-Expected: no errors.
+Run: `pnpm build`
+Expected: build succeeds with no type errors (electron-vite type-checks main + renderer). Do NOT use `tsc -p tsconfig.*.json --noEmit` — those configs use include patterns and standalone runs surface unrelated pre-existing TS6307 noise.
 
 - [ ] **Step 4: Lint**
 
