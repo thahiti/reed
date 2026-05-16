@@ -165,6 +165,11 @@ export const createMenu = (mainWindow: BrowserWindow, settings: AppSettings): Me
         },
         { type: 'separator' },
         {
+          label: 'Export as PDF...',
+          click: () => { mainWindow.webContents.send('menu:export-pdf'); },
+        },
+        { type: 'separator' },
+        {
           label: 'Copy File Path',
           accelerator: kb['file:copy-path'],
           click: () => { mainWindow.webContents.send('menu:copy-file-path'); },

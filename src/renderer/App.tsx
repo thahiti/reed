@@ -417,6 +417,16 @@ export const App: FC = () => {
     return unsub;
   }, [handleSave]);
 
+  // Menu — export as PDF
+  useEffect(() => {
+    const unsub = window.api.on('menu:export-pdf', () => {
+      if (activeTab?.filePath) {
+        void window.api.invoke('pdf:export', activeTab.filePath);
+      }
+    });
+    return unsub;
+  }, [activeTab]);
+
   // Menu — copy file path
   useEffect(() => {
     const unsub = window.api.on('menu:copy-file-path', () => {
