@@ -20,6 +20,11 @@ export type IpcChannels = {
   'settings:get': { args: readonly []; return: AppSettings };
   'settings:set': { args: readonly [settings: AppSettings]; return: undefined };
   'settings:open-file': { args: readonly []; return: undefined };
+  'pdf:export': {
+    args: readonly [filePath: string];
+    return: { ok: true; path: string } | { ok: false; reason: string };
+  };
+  'pdf:print-ready': { args: readonly []; return: undefined };
 };
 
 export type HistoryEntry = {
