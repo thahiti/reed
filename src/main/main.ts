@@ -6,6 +6,7 @@ import { registerThemeHandlers } from './ipc/themeHandlers';
 import { getSettings, registerSettingsHandlers } from './ipc/settingsHandlers';
 import { registerFileWatchHandlers } from './ipc/fileWatchHandlers';
 import { registerDialogHandlers } from './ipc/dialogHandlers';
+import { registerPdfHandlers } from './ipc/pdfHandlers';
 import { registerImageProtocol } from './protocol';
 import { createMenu } from './menu';
 import { createOpenFileQueue } from './openFileQueue';
@@ -62,6 +63,7 @@ void app.whenReady().then(() => {
   registerThemeHandlers();
   registerHistoryHandlers();
   registerDialogHandlers();
+  registerPdfHandlers();
   const fileWatcher = registerFileWatchHandlers();
 
   mainWindow = createWindow();
