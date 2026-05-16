@@ -18,10 +18,11 @@ test.describe('PDF export E2E', () => {
 
       await app.evaluate(({ dialog }, filePath) => {
         // Stub the save dialog to a fixed temp path.
-        dialog.showSaveDialog = (async () => ({
-          canceled: false,
-          filePath,
-        })) as typeof dialog.showSaveDialog;
+        dialog.showSaveDialog = (() =>
+          Promise.resolve({
+            canceled: false,
+            filePath,
+          })) as typeof dialog.showSaveDialog;
       }, outPdf);
 
       await app.evaluate(({ BrowserWindow }, filePath) => {
